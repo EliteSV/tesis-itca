@@ -1,0 +1,12 @@
+node_modules
+dist
+*.log
+.env
+.env.local
+.env.*.local
+docker-compose.yml
+.env.*
+!.env.template
+backend/uploads/*
+backups/
+
