@@ -733,13 +733,6 @@ export class OpportunitiesService {
       );
     }
 
-    // Solo se pueden aceptar solicitudes que estén en estado "aprobada"
-    if (application.status !== ApplicationStatus.APPROVED) {
-      throw new BadRequestException(
-        'Solo se pueden aceptar solicitudes que estén en estado aprobada',
-      );
-    }
-
     if (application.status === ApplicationStatus.ACCEPTED) {
       throw new BadRequestException('Esta aplicación ya está aceptada');
     }
@@ -747,6 +740,13 @@ export class OpportunitiesService {
     if (opportunity.status === OpportunityStatus.CLOSED) {
       throw new BadRequestException(
         'No se pueden aceptar más aplicaciones. La oportunidad está cerrada.',
+      );
+    }
+
+    // Solo se pueden aceptar solicitudes que estén en estado "aprobada"
+    if (application.status !== ApplicationStatus.APPROVED) {
+      throw new BadRequestException(
+        'Solo se pueden aceptar solicitudes que estén en estado aprobada',
       );
     }
 
