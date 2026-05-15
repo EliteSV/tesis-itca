@@ -1,0 +1,81 @@
+{
+  "name": "itca-pp-system-backend",
+  "description": "Sistema web inteligente para gestión automatizada de prácticas profesionales ITCA-FEPADE",
+  "keywords": ["nestjs", "mongodb", "typescript"],
+  "stack": "heroku-24",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "PORT": {
+      "description": "Puerto del servidor (Heroku lo asigna automáticamente)",
+      "value": "3000"
+    },
+    "NODE_ENV": {
+      "description": "Entorno de ejecución",
+      "value": "production"
+    },
+    "MONGODB_URI": {
+      "description": "URI de conexión a MongoDB Atlas",
+      "required": true
+    },
+    "JWT_SECRET": {
+      "description": "Clave secreta para firmar tokens JWT",
+      "generator": "secret",
+      "required": true
+    },
+    "JWT_REFRESH_SECRET": {
+      "description": "Clave secreta para firmar tokens de refresco JWT",
+      "generator": "secret",
+      "required": true
+    },
+    "API_URL": {
+      "description": "URL pública del backend (ej: https://tu-app.herokuapp.com)",
+      "required": true
+    },
+    "SERVER_URL": {
+      "description": "URL pública del servidor, igual que API_URL",
+      "required": true
+    },
+    "FRONTEND_URL": {
+      "description": "URL del frontend en Vercel (ej: https://tu-app.vercel.app)",
+      "required": true
+    },
+    "TRUST_PROXY": {
+      "description": "Habilitar confianza en proxy inverso de Heroku",
+      "value": "true"
+    },
+    "GOOGLE_CLIENT_ID": {
+      "description": "Client ID de Google OAuth",
+      "required": false
+    },
+    "GOOGLE_CLIENT_SECRET": {
+      "description": "Client Secret de Google OAuth",
+      "required": false
+    },
+    "OPENAI_API_KEY": {
+      "description": "API Key de OpenAI para funciones de IA",
+      "required": false
+    },
+    "RESEND_API_KEY": {
+      "description": "API Key de Resend para envío de correos",
+      "required": false
+    },
+    "EMAIL_FROM": {
+      "description": "Dirección de correo de origen",
+      "required": false
+    },
+    "EMAIL_FROM_NAME": {
+      "description": "Nombre del remitente en correos",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}
