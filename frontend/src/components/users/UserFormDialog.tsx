@@ -32,7 +32,7 @@ import type { User as UserType, CreateUserDto } from '@/types/user.types';
 const userSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   email: z.string().email('El email debe ser válido').min(1, 'El email es requerido'),
-  role: z.nativeEnum(UserRole, { required_error: 'El rol es requerido' }),
+  role: z.nativeEnum(UserRole, { message: 'El rol es requerido' }),
   careerId: z.string().optional(),
 }).refine((data) => {
   if (data.role === UserRole.COORDINADOR) {

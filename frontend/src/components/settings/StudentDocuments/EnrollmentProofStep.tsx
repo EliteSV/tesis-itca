@@ -8,7 +8,6 @@ import {
   X,
   Trash2,
   ArrowLeft,
-  ArrowRight,
 } from 'lucide-react';
 import { studentsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -39,7 +38,6 @@ export function EnrollmentProofStep({
   onSuccess,
   onError,
   onStepChange,
-  activeStep,
 }: EnrollmentProofStepProps) {
   const handleDelete = async () => {
     if (
