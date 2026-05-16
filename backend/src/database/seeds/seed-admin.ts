@@ -20,7 +20,7 @@ export class SeedAdmin extends BaseSeed {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash('123456asdasd', 10);
+    const hashedPassword = await bcrypt.hash('Itca123', 10);
 
     const adminUser = {
       email: 'admin@itca.edu.sv',

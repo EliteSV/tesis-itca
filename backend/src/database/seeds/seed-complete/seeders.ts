@@ -103,7 +103,7 @@ export class SeedSeeders {
   async seedCompanyUsers(): Promise<void> {
     const companiesCollection = this.connection.collection('companies');
     const usersCollection = this.connection.collection('users');
-    const password = '123456asdasd';
+    const password = 'Itca123';
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const companiesList = await companiesCollection.find({}).toArray();
@@ -134,7 +134,7 @@ export class SeedSeeders {
     const careersCollection = this.connection.collection('careers');
     const usersCollection = this.connection.collection('users');
     const studentsCollection = this.connection.collection('students');
-    const password = '123456asdasd';
+    const password = 'Itca123';
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const careers = await careersCollection.find({}).toArray();
