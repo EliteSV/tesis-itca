@@ -111,7 +111,7 @@ export class CareersController {
     name: 'dateTo',
     required: false,
     type: String,
-    description:       'Fecha de fin para filtrar por fecha de creación (YYYY-MM-DD)',
+    description: 'Fecha de fin para filtrar por fecha de creación (YYYY-MM-DD)',
   })
   findAll(
     @Query('page') page?: string,

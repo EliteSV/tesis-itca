@@ -249,17 +249,15 @@ export class OpportunitiesService {
       .exec();
 
     const applicationsCountMap = new Map(
-      applicationsCount.map((item) => [
-        item._id.toString(),
-        item.count,
-      ]),
+      applicationsCount.map((item) => [item._id.toString(), item.count]),
     );
 
     const frontendUrl = this.configService.get<string>('frontendUrl') || '';
 
     const dataWithShareLinks = data.map((opp) => {
       const oppObj = opp.toObject();
-      const applicationsCount = applicationsCountMap.get(opp._id.toString()) || 0;
+      const applicationsCount =
+        applicationsCountMap.get(opp._id.toString()) || 0;
       return {
         ...oppObj,
         career: oppObj.career,
@@ -489,9 +487,8 @@ export class OpportunitiesService {
       throw new NotFoundException('Oportunidad no encontrada');
     }
 
-    const applications = await this.getApplicationsByOpportunityInternal(
-      opportunityId,
-    );
+    const applications =
+      await this.getApplicationsByOpportunityInternal(opportunityId);
 
     // Evaluar automáticamente aplicaciones sin calificación (en segundo plano)
     this.evaluateApplicationsWithoutScore(applications, companyId).catch(
@@ -590,7 +587,7 @@ export class OpportunitiesService {
 
       const matchScoreValue =
         app.matchScore !== undefined && app.matchScore !== null
-          ? (app.matchScore as number)
+          ? app.matchScore
           : undefined;
 
       return {
@@ -727,8 +724,8 @@ export class OpportunitiesService {
         : typeof student.careerId === 'object' &&
             student.careerId !== null &&
             '_id' in student.careerId
-          ? (student.careerId as { _id: Types.ObjectId | string })._id
-              instanceof Types.ObjectId
+          ? (student.careerId as { _id: Types.ObjectId | string })
+              ._id instanceof Types.ObjectId
             ? (student.careerId as { _id: Types.ObjectId })._id.toString()
             : String((student.careerId as { _id: string })._id)
           : String(student.careerId);
@@ -817,10 +814,7 @@ export class OpportunitiesService {
       {
         studentId: application.studentId,
         status: {
-          $in: [
-            ApplicationStatus.PENDING,
-            ApplicationStatus.APPROVED,
-          ],
+          $in: [ApplicationStatus.PENDING, ApplicationStatus.APPROVED],
         },
         _id: { $ne: application._id },
       },
@@ -874,7 +868,9 @@ export class OpportunitiesService {
     const opportunityCompanyId =
       opportunity.companyId instanceof Types.ObjectId
         ? opportunity.companyId.toString()
-        : String((opportunity.companyId as unknown as string | Types.ObjectId) || '');
+        : String(
+            (opportunity.companyId as unknown as string | Types.ObjectId) || '',
+          );
 
     if (opportunityCompanyId !== companyId) {
       throw new ForbiddenException(
@@ -882,7 +878,10 @@ export class OpportunitiesService {
       );
     }
 
-    if (application.matchScore !== undefined && application.matchScore !== null) {
+    if (
+      application.matchScore !== undefined &&
+      application.matchScore !== null
+    ) {
       throw new BadRequestException(
         'Esta aplicación ya tiene una calificación asignada',
       );
@@ -1806,8 +1805,10 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       const opp = appObj.opportunityId as unknown;
 
       // Ensure createdAt and updatedAt are included
-      const createdAt = appObj.createdAt || (app as { createdAt?: Date }).createdAt;
-      const updatedAt = appObj.updatedAt || (app as { updatedAt?: Date }).updatedAt;
+      const createdAt =
+        appObj.createdAt || (app as { createdAt?: Date }).createdAt;
+      const updatedAt =
+        appObj.updatedAt || (app as { updatedAt?: Date }).updatedAt;
 
       if (!opp || opp instanceof Types.ObjectId) {
         return {
@@ -1899,8 +1900,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           typeof userIdValue === 'object' &&
           '_id' in userIdValue
         ) {
-          const idValue = (userIdValue as { _id: Types.ObjectId | string })
-            ._id;
+          const idValue = (userIdValue as { _id: Types.ObjectId | string })._id;
           return typeof idValue === 'string'
             ? new Types.ObjectId(idValue)
             : idValue;
@@ -1979,28 +1979,28 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const sortedApplications = filteredApplications.sort((a, b) => {
       const aStatus = (a as any).status;
       const bStatus = (b as any).status;
-      
+
       // Prioridad 1: Las aprobadas van primero
       const aIsApproved = aStatus === ApplicationStatus.APPROVED;
       const bIsApproved = bStatus === ApplicationStatus.APPROVED;
-      
+
       if (aIsApproved && !bIsApproved) {
         return -1;
       }
       if (!aIsApproved && bIsApproved) {
         return 1;
       }
-      
+
       // Si ambas tienen el mismo estado (ambas aprobadas o ambas no aprobadas),
       // ordenar por matchScore (mejores primero)
       const aScore = (a as any).matchScore ?? -1;
       const bScore = (b as any).matchScore ?? -1;
-      
+
       // Si ambos tienen calificación, ordenar por calificación descendente
       if (aScore >= 0 && bScore >= 0) {
         return bScore - aScore;
       }
-      
+
       // Si solo uno tiene calificación, el que tiene calificación va primero
       if (aScore >= 0 && bScore < 0) {
         return -1;
@@ -2008,7 +2008,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       if (aScore < 0 && bScore >= 0) {
         return 1;
       }
-      
+
       // Si ninguno tiene calificación, ordenar por fecha de creación descendente
       const aDate = (a as any).createdAt
         ? new Date((a as any).createdAt).getTime()
@@ -2086,13 +2086,19 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           const oppObj = opportunityIdValue as unknown as {
             _id: Types.ObjectId | string;
             title: string;
-            career?: { _id: Types.ObjectId | string; name: string; code: string };
-            company?: { _id: Types.ObjectId | string; name: string; logo?: string };
+            career?: {
+              _id: Types.ObjectId | string;
+              name: string;
+              code: string;
+            };
+            company?: {
+              _id: Types.ObjectId | string;
+              name: string;
+              logo?: string;
+            };
           };
           const oppIdString =
-            typeof oppObj._id === 'string'
-              ? oppObj._id
-              : oppObj._id.toString();
+            typeof oppObj._id === 'string' ? oppObj._id : oppObj._id.toString();
           opportunityInfo = {
             _id: oppIdString,
             title: oppObj.title || '',
@@ -2255,12 +2261,12 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const sortedApplications = filteredApplications.sort((a, b) => {
       const aScore = (a as any).matchScore ?? -1;
       const bScore = (b as any).matchScore ?? -1;
-      
+
       // Si ambos tienen calificación, ordenar por calificación descendente
       if (aScore >= 0 && bScore >= 0) {
         return bScore - aScore;
       }
-      
+
       // Si solo uno tiene calificación, el que tiene calificación va primero
       if (aScore >= 0 && bScore < 0) {
         return -1;
@@ -2268,7 +2274,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       if (aScore < 0 && bScore >= 0) {
         return 1;
       }
-      
+
       // Si ninguno tiene calificación, ordenar por fecha de creación descendente
       const aDate = (a as any).createdAt
         ? new Date((a as any).createdAt).getTime()
@@ -2346,13 +2352,19 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           const oppObj = opportunityIdValue as unknown as {
             _id: Types.ObjectId | string;
             title: string;
-            career?: { _id: Types.ObjectId | string; name: string; code: string };
-            company?: { _id: Types.ObjectId | string; name: string; logo?: string };
+            career?: {
+              _id: Types.ObjectId | string;
+              name: string;
+              code: string;
+            };
+            company?: {
+              _id: Types.ObjectId | string;
+              name: string;
+              logo?: string;
+            };
           };
           const oppIdString =
-            typeof oppObj._id === 'string'
-              ? oppObj._id
-              : oppObj._id.toString();
+            typeof oppObj._id === 'string' ? oppObj._id : oppObj._id.toString();
 
           let career: { _id: string; name: string; code: string } | undefined;
           let company: { _id: string; name: string; logo?: string } | undefined;
@@ -2485,7 +2497,10 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         const opportunityCompanyId =
           opportunity.companyId instanceof Types.ObjectId
             ? opportunity.companyId.toString()
-            : String((opportunity.companyId as unknown as string | Types.ObjectId) || '');
+            : String(
+                (opportunity.companyId as unknown as string | Types.ObjectId) ||
+                  '',
+              );
 
         if (opportunityCompanyId !== companyId) {
           continue;
@@ -2531,7 +2546,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           title: opportunityPopulated.title,
           description: opportunityPopulated.description || '',
           activities: opportunityPopulated.activities || '',
-          career: (opportunityPopulated as any).career?.name || 'No especificada',
+          career:
+            (opportunityPopulated as any).career?.name || 'No especificada',
           totalHours: opportunityPopulated.totalHours,
           modality: opportunityPopulated.modality,
           workType: opportunityPopulated.workType,
@@ -2589,7 +2605,9 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
         const content = response.choices[0]?.message?.content?.trim();
         if (!content) {
-          console.warn(`No se recibió respuesta de OpenAI para aplicación ${app._id}`);
+          console.warn(
+            `No se recibió respuesta de OpenAI para aplicación ${app._id}`,
+          );
           continue;
         }
 

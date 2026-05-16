@@ -29,7 +29,9 @@ export default () => ({
   },
   resend: {
     apiKey: process.env.RESEND_API_KEY || '',
-    emailFrom: process.env.EMAIL_FROM || 'noreply@practicas-profesionales-itca.lat',
-    emailFromName: process.env.EMAIL_FROM_NAME || 'Prácticas Profesionales ITCA-FEPADE',
+    emailFrom:
+      process.env.EMAIL_FROM || 'noreply@practicas-profesionales-itca.lat',
+    emailFromName:
+      process.env.EMAIL_FROM_NAME || 'Prácticas Profesionales ITCA-FEPADE',
   },
 });

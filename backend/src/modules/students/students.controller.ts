@@ -74,7 +74,8 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acceso denegado - Solo estudiantes pueden acceder a su propio perfil',
+    description:
+      'Acceso denegado - Solo estudiantes pueden acceder a su propio perfil',
   })
   @ApiResponse({
     status: 404,
@@ -99,7 +100,8 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acceso denegado - Solo estudiantes pueden actualizar su propio perfil',
+    description:
+      'Acceso denegado - Solo estudiantes pueden actualizar su propio perfil',
   })
   @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   @ApiResponse({
@@ -127,10 +129,7 @@ export class StudentsController {
         if (file.mimetype === 'application/pdf') {
           cb(null, true);
         } else {
-          cb(
-            new BadRequestException('Solo se permiten archivos PDF'),
-            false,
-          );
+          cb(new BadRequestException('Solo se permiten archivos PDF'), false);
         }
       },
       limits: {
@@ -145,12 +144,14 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Documento subido y guardado exitosamente. Incluye el estado de validación completo.',
+    description:
+      'Documento subido y guardado exitosamente. Incluye el estado de validación completo.',
     type: StudentResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'El documento fue guardado pero no pasó la validación. El estado de validación se incluye en la respuesta.',
+    description:
+      'El documento fue guardado pero no pasó la validación. El estado de validación se incluye en la respuesta.',
   })
   @ApiResponse({
     status: 403,
@@ -164,10 +165,7 @@ export class StudentsController {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    return this.studentsService.uploadSocialServiceDocument(
-      req.user.id,
-      file,
-    );
+    return this.studentsService.uploadSocialServiceDocument(req.user.id, file);
   }
 
   @Post('my-profile/passed-subjects-document')
@@ -184,10 +182,7 @@ export class StudentsController {
         if (file.mimetype === 'application/pdf') {
           cb(null, true);
         } else {
-          cb(
-            new BadRequestException('Solo se permiten archivos PDF'),
-            false,
-          );
+          cb(new BadRequestException('Solo se permiten archivos PDF'), false);
         }
       },
       limits: {
@@ -202,12 +197,14 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Documento subido y guardado exitosamente. Incluye el estado de validación completo y las materias ganadas.',
+    description:
+      'Documento subido y guardado exitosamente. Incluye el estado de validación completo y las materias ganadas.',
     type: StudentResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'El documento fue guardado pero no pasó la validación. El estado de validación se incluye en la respuesta.',
+    description:
+      'El documento fue guardado pero no pasó la validación. El estado de validación se incluye en la respuesta.',
   })
   @ApiResponse({
     status: 403,
@@ -221,10 +218,7 @@ export class StudentsController {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    return this.studentsService.uploadPassedSubjectsDocument(
-      req.user.id,
-      file,
-    );
+    return this.studentsService.uploadPassedSubjectsDocument(req.user.id, file);
   }
 
   @Delete('my-profile/social-service-document')
@@ -242,7 +236,8 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acceso denegado - Solo estudiantes pueden eliminar sus propios documentos',
+    description:
+      'Acceso denegado - Solo estudiantes pueden eliminar sus propios documentos',
   })
   @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   deleteSocialServiceDocument(@Request() req: { user: { id: string } }) {
@@ -264,7 +259,8 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acceso denegado - Solo estudiantes pueden eliminar sus propios documentos',
+    description:
+      'Acceso denegado - Solo estudiantes pueden eliminar sus propios documentos',
   })
   @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   deletePassedSubjectsDocument(@Request() req: { user: { id: string } }) {
@@ -285,10 +281,7 @@ export class StudentsController {
         if (file.mimetype === 'application/pdf') {
           cb(null, true);
         } else {
-          cb(
-            new BadRequestException('Solo se permiten archivos PDF'),
-            false,
-          );
+          cb(new BadRequestException('Solo se permiten archivos PDF'), false);
         }
       },
       limits: { fileSize: 10 * 1024 * 1024 },
@@ -315,7 +308,10 @@ export class StudentsController {
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
-    return this.studentsService.uploadEnrollmentProofDocument(req.user.id, file);
+    return this.studentsService.uploadEnrollmentProofDocument(
+      req.user.id,
+      file,
+    );
   }
 
   @Delete('my-profile/enrollment-proof-document')
@@ -332,7 +328,8 @@ export class StudentsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acceso denegado - Solo estudiantes pueden eliminar sus propios documentos',
+    description:
+      'Acceso denegado - Solo estudiantes pueden eliminar sus propios documentos',
   })
   @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
   deleteEnrollmentProofDocument(@Request() req: { user: { id: string } }) {
@@ -427,12 +424,11 @@ export class StudentsController {
     const limitNum = limit ? parseInt(limit, 10) : 10;
     const isActiveFilter =
       isActive !== undefined ? isActive === 'true' : undefined;
-    
+
     // Si es coordinador, usar su careerId asignado (ignorar el parámetro careerId del query)
-    const finalCareerId = req.user.role === UserRole.COORDINADOR 
-      ? req.user.careerId 
-      : careerId;
-    
+    const finalCareerId =
+      req.user.role === UserRole.COORDINADOR ? req.user.careerId : careerId;
+
     return this.studentsService.findAll(
       pageNum,
       limitNum,
@@ -533,5 +529,4 @@ export class StudentsController {
   generateTemporaryPassword(@Param('id') id: string) {
     return this.studentsService.generateTemporaryPassword(id);
   }
-
 }

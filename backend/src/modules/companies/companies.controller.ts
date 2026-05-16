@@ -52,7 +52,6 @@ export class CompaniesController {
   @Roles(UserRole.ADMIN)
   @UseInterceptors(
     FileInterceptor('logo', {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       storage: diskStorage({
         destination: (
           _req: unknown,
@@ -313,7 +312,6 @@ export class CompaniesController {
   @Roles(UserRole.COMPANY)
   @UseInterceptors(
     FileInterceptor('logo', {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       storage: diskStorage({
         destination: (
           _req: unknown,
@@ -388,7 +386,6 @@ export class CompaniesController {
   @Roles(UserRole.ADMIN)
   @UseInterceptors(
     FileInterceptor('logo', {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       storage: diskStorage({
         destination: (
           _req: unknown,

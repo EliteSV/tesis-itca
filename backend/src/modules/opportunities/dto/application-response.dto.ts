@@ -44,4 +44,3 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Fecha de actualización' })
   updatedAt: Date;
 }
-

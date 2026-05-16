@@ -72,4 +72,3 @@ export class SeedComplete extends BaseSeed {
     console.log('Seed completo finalizado exitosamente');
   }
 }
-

@@ -21,7 +21,10 @@ import {
   Opportunity,
   OpportunitySchema,
 } from '@/modules/opportunities/schemas/opportunity.schema';
-import { Student, StudentSchema } from '@/modules/students/schemas/student.schema';
+import {
+  Student,
+  StudentSchema,
+} from '@/modules/students/schemas/student.schema';
 import { User, UserSchema } from '@/modules/auth/schemas/user.schema';
 import { StudentsModule } from '@/modules/students/students.module';
 
@@ -46,4 +49,3 @@ import { StudentsModule } from '@/modules/students/students.module';
   exports: [PracticeProfessionalService],
 })
 export class PracticeProfessionalModule {}
-

@@ -44,4 +44,3 @@ ApplicationSchema.index({ opportunityId: 1 });
 ApplicationSchema.index({ studentId: 1 });
 ApplicationSchema.index({ status: 1 });
 ApplicationSchema.index({ opportunityId: 1, studentId: 1 }, { unique: true });
-

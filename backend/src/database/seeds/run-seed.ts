@@ -28,7 +28,9 @@ async function bootstrap() {
         break;
       default:
         console.error(`Tipo de seed desconocido: ${seedType}`);
-        console.log('Tipos disponibles: admin, complete, professional-profiles');
+        console.log(
+          'Tipos disponibles: admin, complete, professional-profiles',
+        );
         process.exit(1);
     }
   } catch (error) {

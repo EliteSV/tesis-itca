@@ -7,7 +7,10 @@ import { AuthController } from '@/modules/auth/auth.controller';
 import { AuthService } from '@/modules/auth/auth.service';
 import { JwtStrategy } from '@/modules/auth/strategies/jwt.strategy';
 import { User, UserSchema } from '@/modules/auth/schemas/user.schema';
-import { Student, StudentSchema } from '@/modules/students/schemas/student.schema';
+import {
+  Student,
+  StudentSchema,
+} from '@/modules/students/schemas/student.schema';
 import { Career, CareerSchema } from '@/modules/careers/schemas/career.schema';
 
 @Module({

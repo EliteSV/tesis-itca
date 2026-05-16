@@ -51,9 +51,11 @@ Responde SOLO con un JSON válido: { "documentStudentName": "..." o null, "docum
 
 export const SOCIAL_SERVICE_EXTRACTION_USER_PROMPT = `En las siguientes imágenes está el documento. Es la ÚNICA fuente. Extrae de estas imágenes el nombre completo (después de "HACE CONSTAR QUE:") y el número de carnet (después de "número de carnet"). Devuelve solo el JSON con documentStudentName y documentIdentificationNumber.`;
 
-export const SOCIAL_SERVICE_REFERENCE_LABEL = '\n\nEste es el formato de referencia del documento:';
+export const SOCIAL_SERVICE_REFERENCE_LABEL =
+  '\n\nEste es el formato de referencia del documento:';
 
-export const SOCIAL_SERVICE_STAMP_QUESTION = '\n\n¿Este documento tiene este sello?';
+export const SOCIAL_SERVICE_STAMP_QUESTION =
+  '\n\n¿Este documento tiene este sello?';
 
 export const SOCIAL_SERVICE_VERIFICATION_INSTRUCTIONS =
   '\n\nTareas:\n1. Validar formato (similar al documento de referencia) y presencia del sello.\n2. EXTRAER DATOS: En la imagen anterior, localiza "HACE CONSTAR QUE:" y copia literalmente el nombre que viene justo después en documentStudentName. Luego localiza "número de carnet" (o "carnet") y copia literalmente el número/código que viene después en documentIdentificationNumber. Si no ves ese texto en la imagen, no inventes: escribe null y añade un warning.\n\nRecuerda: documentStudentName y documentIdentificationNumber deben ser COPIA LITERAL del texto en la imagen. Cualquier dato inventado hará fallar la validación.\n\nResponde solo con JSON: isValid, hasValidFormat, hasValidStamp, errors, warnings, reasoning, documentStudentName, documentIdentificationNumber.';

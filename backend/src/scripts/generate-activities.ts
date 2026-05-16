@@ -4,7 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import OpenAI from 'openai';
-import { Student, StudentDocument } from '@/modules/students/schemas/student.schema';
+import {
+  Student,
+  StudentDocument,
+} from '@/modules/students/schemas/student.schema';
 import {
   Application,
   ApplicationDocument,
@@ -106,23 +109,23 @@ Genera exactamente 30 actividades variadas y realistas.`;
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const configService = app.get(ConfigService);
-    const studentModel = app.get<Model<StudentDocument>>(
-      getModelToken(Student.name),
-    );
-    const applicationModel = app.get<Model<ApplicationDocument>>(
-      getModelToken(Application.name),
-    );
-    const practiceActivityModel = app.get<Model<PracticeActivityDocument>>(
-      getModelToken(PracticeActivity.name),
-    );
-    const userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
+  const studentModel = app.get<Model<StudentDocument>>(
+    getModelToken(Student.name),
+  );
+  const applicationModel = app.get<Model<ApplicationDocument>>(
+    getModelToken(Application.name),
+  );
+  const practiceActivityModel = app.get<Model<PracticeActivityDocument>>(
+    getModelToken(PracticeActivity.name),
+  );
+  const userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
 
-    const studentEmail = 'ana.gonzalez@estudiante.itca.edu.sv';
+  const studentEmail = 'ana.gonzalez@estudiante.itca.edu.sv';
 
-    try {
-      console.log(`Buscando estudiante con email: ${studentEmail}`);
+  try {
+    console.log(`Buscando estudiante con email: ${studentEmail}`);
 
-      const user = await userModel.findOne({ email: studentEmail }).exec();
+    const user = await userModel.findOne({ email: studentEmail }).exec();
 
     if (!user) {
       throw new Error(`No se encontró usuario con email: ${studentEmail}`);
@@ -135,10 +138,14 @@ async function bootstrap() {
       .exec();
 
     if (!student) {
-      throw new Error(`No se encontró estudiante para el usuario: ${studentEmail}`);
+      throw new Error(
+        `No se encontró estudiante para el usuario: ${studentEmail}`,
+      );
     }
 
-    console.log(`Estudiante encontrado: ${student.firstName} ${student.lastName}`);
+    console.log(
+      `Estudiante encontrado: ${student.firstName} ${student.lastName}`,
+    );
 
     const acceptedApplication = await applicationModel
       .findOne({
@@ -162,7 +169,7 @@ async function bootstrap() {
     }
 
     const opportunity = acceptedApplication.opportunityId as any;
-    const company = opportunity.companyId as any;
+    const company = opportunity.companyId;
     const career = opportunity.careerId || student.careerId;
 
     console.log(`Práctica profesional encontrada:`);

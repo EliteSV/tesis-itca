@@ -105,9 +105,7 @@ export class SeedProfessionalProfiles extends BaseSeed {
     const studentsCollection = this.connection.collection('students');
     const careersCollection = this.connection.collection('careers');
 
-    const students = await studentsCollection
-      .find({})
-      .toArray();
+    const students = await studentsCollection.find({}).toArray();
 
     if (students.length === 0) {
       console.log('No hay estudiantes en la base de datos');
@@ -115,9 +113,7 @@ export class SeedProfessionalProfiles extends BaseSeed {
     }
 
     const careers = await careersCollection.find({}).toArray();
-    const careerMap = new Map(
-      careers.map((c: any) => [c._id.toString(), c]),
-    );
+    const careerMap = new Map(careers.map((c: any) => [c._id.toString(), c]));
 
     console.log(`Procesando ${students.length} estudiantes...`);
 
@@ -168,15 +164,22 @@ export class SeedProfessionalProfiles extends BaseSeed {
             updateData.skills = professionalProfile.skills;
           }
 
-          if (professionalProfile.summary || professionalProfile.languages || professionalProfile.certifications || professionalProfile.projects) {
+          if (
+            professionalProfile.summary ||
+            professionalProfile.languages ||
+            professionalProfile.certifications ||
+            professionalProfile.projects
+          ) {
             updateData.professionalProfile = {};
 
             if (professionalProfile.summary) {
-              updateData.professionalProfile.summary = professionalProfile.summary;
+              updateData.professionalProfile.summary =
+                professionalProfile.summary;
             }
 
             if (professionalProfile.languages) {
-              updateData.professionalProfile.languages = professionalProfile.languages;
+              updateData.professionalProfile.languages =
+                professionalProfile.languages;
             }
 
             if (professionalProfile.certifications) {
@@ -191,7 +194,8 @@ export class SeedProfessionalProfiles extends BaseSeed {
             }
 
             if (professionalProfile.projects) {
-              updateData.professionalProfile.projects = professionalProfile.projects;
+              updateData.professionalProfile.projects =
+                professionalProfile.projects;
             }
           }
 
@@ -279,7 +283,9 @@ La información debe ser realista, coherente y variada entre diferentes estudian
         certifications: data.certifications?.map((cert) => ({
           ...cert,
           date: this.parseDate(cert.date),
-          expiryDate: cert.expiryDate ? this.parseDate(cert.expiryDate) : undefined,
+          expiryDate: cert.expiryDate
+            ? this.parseDate(cert.expiryDate)
+            : undefined,
         })),
         projects: data.projects,
       };
@@ -422,4 +428,3 @@ Responde SOLO con un JSON válido con esta estructura exacta:
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
-

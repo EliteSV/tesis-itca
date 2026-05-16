@@ -3,7 +3,8 @@ import { HydratedDocument, Types } from 'mongoose';
 import type { OpportunityDocument } from '@/modules/opportunities/schemas/opportunity.schema';
 import type { ApplicationDocument } from '@/modules/opportunities/schemas/application.schema';
 
-export type PracticeProfessionalDocument = HydratedDocument<PracticeProfessional>;
+export type PracticeProfessionalDocument =
+  HydratedDocument<PracticeProfessional>;
 
 export enum PracticeStatus {
   EN_CURSO = 'en_curso',
@@ -12,7 +13,12 @@ export enum PracticeStatus {
 
 @Schema({ timestamps: true })
 export class PracticeProfessional {
-  @Prop({ type: Types.ObjectId, ref: 'Application', required: true, unique: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Application',
+    required: true,
+    unique: true,
+  })
   applicationId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })

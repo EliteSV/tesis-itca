@@ -54,7 +54,10 @@ export class UsersService {
       );
     }
 
-    if (createUserDto.role === UserRole.COORDINADOR && !createUserDto.careerId) {
+    if (
+      createUserDto.role === UserRole.COORDINADOR &&
+      !createUserDto.careerId
+    ) {
       throw new BadRequestException(
         'La carrera es requerida para coordinadores',
       );
@@ -215,7 +218,11 @@ export class UsersService {
 
     const roleToUse = updateUserDto.role ?? user.role;
 
-    if (roleToUse === UserRole.COORDINADOR && !updateUserDto.careerId && !user.careerId) {
+    if (
+      roleToUse === UserRole.COORDINADOR &&
+      !updateUserDto.careerId &&
+      !user.careerId
+    ) {
       throw new BadRequestException(
         'La carrera es requerida para coordinadores',
       );

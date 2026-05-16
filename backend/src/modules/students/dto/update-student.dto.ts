@@ -306,4 +306,3 @@ export class UpdateStudentDto extends PartialType(CreateStudentDto) {
   @IsOptional()
   professionalProfile?: ProfessionalProfileDto;
 }
-

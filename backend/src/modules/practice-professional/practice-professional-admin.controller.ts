@@ -49,4 +49,3 @@ export class PracticeProfessionalAdminController {
     return this.practiceProfessionalService.getPracticeProfessional(studentId);
   }
 }
-

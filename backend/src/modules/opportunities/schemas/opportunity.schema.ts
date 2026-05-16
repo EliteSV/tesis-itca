@@ -21,7 +21,11 @@ export enum OpportunityWorkType {
   FULL_TIME = 'full-time',
 }
 
-@Schema({ timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } })
+@Schema({
+  timestamps: true,
+  toObject: { virtuals: true },
+  toJSON: { virtuals: true },
+})
 export class Opportunity {
   @Prop({ required: true })
   title: string;

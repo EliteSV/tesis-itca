@@ -1,10 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  IsEmail,
-  MinLength,
-} from 'class-validator';
+import { IsString, IsOptional, IsEmail, MinLength } from 'class-validator';
 
 export class UpdateCompanyUserDto {
   @ApiPropertyOptional({
@@ -33,4 +28,3 @@ export class UpdateCompanyUserDto {
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   password?: string;
 }
-

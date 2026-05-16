@@ -20,4 +20,3 @@ export class ActivitiesResponseDto {
   @ApiProperty({ description: 'Total de páginas' })
   totalPages: number;
 }
-

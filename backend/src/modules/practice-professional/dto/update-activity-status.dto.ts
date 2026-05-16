@@ -22,4 +22,3 @@ export class UpdateActivityStatusDto {
   @IsOptional()
   rejectionReason?: string;
 }
-

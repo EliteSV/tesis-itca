@@ -319,7 +319,7 @@ export class DashboardService {
       .exec();
 
     if (practicesList.length > 0) {
-      const practiceIds = practicesList.map((p) => p._id as Types.ObjectId);
+      const practiceIds = practicesList.map((p) => p._id);
 
       const allActivities = await this.practiceActivityModel
         .find({ practiceProfessionalId: { $in: practiceIds } })
@@ -348,7 +348,7 @@ export class DashboardService {
           (activity) =>
             activity.practiceProfessionalId &&
             activity.practiceProfessionalId.toString() ===
-              (practice._id as Types.ObjectId).toString(),
+              practice._id.toString(),
         );
 
         totalHours += practiceActivities.reduce(

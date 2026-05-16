@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Student, StudentDocument } from '@/modules/students/schemas/student.schema';
+import {
+  Student,
+  StudentDocument,
+} from '@/modules/students/schemas/student.schema';
 
 interface RequestUser {
   id: string;
@@ -35,7 +38,9 @@ export class StudentOwnershipGuard implements CanActivate {
       .exec();
 
     if (!student) {
-      throw new ForbiddenException('No se encontró información de estudiante asociada a tu cuenta');
+      throw new ForbiddenException(
+        'No se encontró información de estudiante asociada a tu cuenta',
+      );
     }
 
     request.user = {
@@ -46,4 +51,3 @@ export class StudentOwnershipGuard implements CanActivate {
     return true;
   }
 }
-

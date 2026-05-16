@@ -30,9 +30,12 @@ const execAsync = promisify(exec);
  */
 async function extractTextFromPdf(documentPath: string): Promise<string> {
   try {
-    const { stdout } = await execAsync(`pdftotext -layout ${JSON.stringify(documentPath)} -`, {
-      maxBuffer: 2 * 1024 * 1024,
-    });
+    const { stdout } = await execAsync(
+      `pdftotext -layout ${JSON.stringify(documentPath)} -`,
+      {
+        maxBuffer: 2 * 1024 * 1024,
+      },
+    );
     return (stdout ?? '').trim();
   } catch {
     return '';
@@ -43,7 +46,9 @@ async function extractTextFromPdf(documentPath: string): Promise<string> {
  * Parsea nombre y carnet del texto de una constancia de servicio social (ITCA).
  * Usa solo el texto extraído del PDF; sin alucinaciones.
  */
-function parseSocialServiceNameAndCarnetFromText(pdfText: string): SocialServiceExtractionResult {
+function parseSocialServiceNameAndCarnetFromText(
+  pdfText: string,
+): SocialServiceExtractionResult {
   const normalized = pdfText.replace(/\s+/g, ' ').trim();
   let documentStudentName: string | null = null;
   let documentIdentificationNumber: string | null = null;
@@ -125,7 +130,8 @@ function parsePassedSubjectsFromPdfText(
       /^\s*[☑\u2611]\s*$/.test(s) ||
       ((s.includes('☑') || s.includes(CHECKMARK)) &&
         s.replace(/\s/g, '').replace(/[☑\u2611]/g, '').length === 0);
-    const hasCheckNext = lineHasOnlyCheckmark(nextLine) || lineHasOnlyCheckmark(nextNext);
+    const hasCheckNext =
+      lineHasOnlyCheckmark(nextLine) || lineHasOnlyCheckmark(nextNext);
     if (!hasCheckSameLine && !hasCheckNext) continue;
     let cycle = normalizeCycle(cycleRaw ?? '');
     if (!/^CICLO\s+[IVX0-9]+$/i.test(cycle)) {
@@ -236,7 +242,9 @@ interface EnrollmentProofFromText {
   }>;
 }
 
-function parseEnrollmentProofFromPdfText(pdfText: string): EnrollmentProofFromText {
+function parseEnrollmentProofFromPdfText(
+  pdfText: string,
+): EnrollmentProofFromText {
   const out: EnrollmentProofFromText = {};
   const estudianteMatch = pdfText.match(
     /Estudiante:\s*([^\n]+?)\s*\.{2,}\s*,\s*Carnet:\s*(\S+)/i,
@@ -253,7 +261,12 @@ function parseEnrollmentProofFromPdfText(pdfText: string): EnrollmentProofFromTe
   const subjectLineRe = /^\s*(\d+)\s{2,}(.+?)\s{2,}\d\s+\s*\(TEO\)/;
   const dateRe = /(\d{2}\/\d{2}\/\d{4})\s+(\d{2}\/\d{2}\/\d{4})/;
   const seen = new Set<string>();
-  const subjects: Array<{ name: string; code?: string; startDate?: string; endDate?: string }> = [];
+  const subjects: Array<{
+    name: string;
+    code?: string;
+    startDate?: string;
+    endDate?: string;
+  }> = [];
   for (const line of lines) {
     const m = line.match(subjectLineRe);
     if (!m) continue;
@@ -392,40 +405,52 @@ export async function validateSocialServiceDocumentWithOpenAI(
     // Convertir PDFs a imágenes de alta calidad
     console.log('Convirtiendo documento PDF a imágenes de alta calidad...');
     const documentImages = await convertPdfToImages(documentPath);
-    
+
     if (documentImages.length === 0) {
       throw new Error('No se pudieron generar imágenes del documento PDF');
     }
-    
+
     console.log(`Documento convertido: ${documentImages.length} página(s)`);
-    
+
     const referenceImages = fs.existsSync(referencePath)
       ? await convertPdfToImages(referencePath)
       : [];
-    
+
     // Leer imagen del sello directamente (PNG)
     const stampImageBase64 = fs.existsSync(stampImagePath)
       ? fs.readFileSync(stampImagePath).toString('base64')
       : null;
-    
+
     if (!stampImageBase64) {
-      console.warn('Advertencia: No se encontró la imagen del sello de referencia');
+      console.warn(
+        'Advertencia: No se encontró la imagen del sello de referencia',
+      );
     }
 
     // 1) Extraer nombre y carnet: primero por texto del PDF (determinista, sin alucinaciones)
     const pdfText = await extractTextFromPdf(documentPath);
     const parsedFromText = parseSocialServiceNameAndCarnetFromText(pdfText);
     const hasFromText =
-      parsedFromText.documentStudentName != null && parsedFromText.documentIdentificationNumber != null;
+      parsedFromText.documentStudentName != null &&
+      parsedFromText.documentIdentificationNumber != null;
 
     if (hasFromText) {
-      result.documentStudentName = safeString(parsedFromText.documentStudentName);
-      result.documentIdentificationNumber = safeString(parsedFromText.documentIdentificationNumber);
+      result.documentStudentName = safeString(
+        parsedFromText.documentStudentName,
+      );
+      result.documentIdentificationNumber = safeString(
+        parsedFromText.documentIdentificationNumber,
+      );
     } else {
       // Fallback: PDF solo imagen → extracción por OpenAI (solo imágenes del documento)
-      const extraction = await extractSocialServiceDataFromDocument(openai, documentImages);
+      const extraction = await extractSocialServiceDataFromDocument(
+        openai,
+        documentImages,
+      );
       result.documentStudentName = safeString(extraction.documentStudentName);
-      result.documentIdentificationNumber = safeString(extraction.documentIdentificationNumber);
+      result.documentIdentificationNumber = safeString(
+        extraction.documentIdentificationNumber,
+      );
     }
 
     // 2) Validar formato y sello con documento + referencia + sello (nombre/carnet ya vienen de la extracción)
@@ -434,7 +459,9 @@ export async function validateSocialServiceDocumentWithOpenAI(
       referenceImages,
       stampImageBase64,
     );
-    const analysis = await validateWithOpenAI(openai, messages, { temperature: 0 });
+    const analysis = await validateWithOpenAI(openai, messages, {
+      temperature: 0,
+    });
 
     result.isValid = analysis.isValid ?? false;
     result.hasValidFormat = analysis.hasValidFormat ?? false;
@@ -452,9 +479,17 @@ export async function validateSocialServiceDocumentWithOpenAI(
         result.isValid = false;
       }
     }
-    if (context && result.documentIdentificationNumber && context.expectedIdentificationNumber) {
-      const docCarnet = normalizeForComparison(result.documentIdentificationNumber);
-      const expectedCarnet = normalizeForComparison(context.expectedIdentificationNumber);
+    if (
+      context &&
+      result.documentIdentificationNumber &&
+      context.expectedIdentificationNumber
+    ) {
+      const docCarnet = normalizeForComparison(
+        result.documentIdentificationNumber,
+      );
+      const expectedCarnet = normalizeForComparison(
+        context.expectedIdentificationNumber,
+      );
       if (docCarnet !== expectedCarnet) {
         result.errors.push(
           `El número de carnet del documento ("${result.documentIdentificationNumber}") no coincide con el del estudiante ("${context.expectedIdentificationNumber}").`,
@@ -475,7 +510,7 @@ export async function validateSocialServiceDocumentWithOpenAI(
     return result;
   } catch (error: any) {
     result.isValid = false;
-    
+
     // Manejar errores específicos de OpenAI
     if (error?.status === 429) {
       if (error?.code === 'insufficient_quota') {
@@ -499,7 +534,7 @@ export async function validateSocialServiceDocumentWithOpenAI(
       const errorMessage = error?.message || 'Error desconocido';
       result.errors.push(`Error al validar con OpenAI: ${errorMessage}`);
     }
-    
+
     console.error('Error en validación OpenAI:', error);
     return result;
   }
@@ -509,12 +544,7 @@ export async function validateSocialServiceDocumentWithOpenAI(
  * Obtiene la ruta del documento de referencia
  */
 function getReferenceDocumentPath(): string {
-  return path.join(
-    __dirname,
-    '..',
-    'assets',
-    'solvencia_horas_sociales.pdf',
-  );
+  return path.join(__dirname, '..', 'assets', 'solvencia_horas_sociales.pdf');
 }
 
 /**
@@ -676,7 +706,6 @@ async function validateWithOpenAI(
   }
 }
 
-
 /**
  * Convierte un PDF a imágenes PNG en base64 usando pdftoppm del sistema
  * Usa poppler-utils instalado en el sistema (más confiable)
@@ -691,7 +720,10 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
     }
 
     // Crear directorio temporal para las imágenes
-    const tempDir = path.join(os.tmpdir(), `pdf-images-${Date.now()}-${Math.random().toString(36).substring(7)}`);
+    const tempDir = path.join(
+      os.tmpdir(),
+      `pdf-images-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+    );
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
@@ -704,7 +736,7 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
     // Usar pdftoppm del sistema directamente
     // pdftoppm -png -scale-to 200 input.pdf output_prefix
     const command = `pdftoppm -png -scale-to ${scale} "${pdfPath}" "${outputPrefix}"`;
-    
+
     try {
       await execAsync(command);
     } catch (execError: any) {
@@ -718,7 +750,8 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
     }
 
     // Leer todas las imágenes generadas
-    const files = fs.readdirSync(tempDir)
+    const files = fs
+      .readdirSync(tempDir)
       .filter((file) => file.endsWith('.png'))
       .sort((a, b) => {
         // Ordenar por número de página (page-1.png, page-2.png, etc.)
@@ -741,7 +774,7 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
     for (const file of files) {
       const imagePath = path.join(tempDir, file);
       const imageBuffer = fs.readFileSync(imagePath);
-      
+
       if (imageBuffer.length === 0) {
         console.warn(`Advertencia: La imagen ${file} está vacía`);
         continue;
@@ -754,7 +787,10 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
       try {
         fs.unlinkSync(imagePath);
       } catch (error) {
-        console.warn(`No se pudo eliminar archivo temporal: ${imagePath}`, error);
+        console.warn(
+          `No se pudo eliminar archivo temporal: ${imagePath}`,
+          error,
+        );
       }
     }
 
@@ -769,7 +805,9 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
       throw new Error('No se pudieron generar imágenes del PDF');
     }
 
-    console.log(`PDF convertido exitosamente: ${images.length} imagen(es) generada(s) usando pdftoppm`);
+    console.log(
+      `PDF convertido exitosamente: ${images.length} imagen(es) generada(s) usando pdftoppm`,
+    );
     return images;
   } catch (error) {
     console.error('Error al convertir PDF a imágenes:', error);
@@ -930,11 +968,11 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
     // Convertir PDFs a imágenes de alta calidad
     console.log('Convirtiendo documento PDF de materias ganadas a imágenes...');
     const documentImages = await convertPdfToImages(documentPath);
-    
+
     if (documentImages.length === 0) {
       throw new Error('No se pudieron generar imágenes del documento PDF');
     }
-    
+
     console.log(`Documento convertido: ${documentImages.length} página(s)`);
 
     let documentImagesToUse = documentImages;
@@ -953,7 +991,9 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
       : [];
 
     if (referenceImages.length === 0) {
-      console.warn('Advertencia: No se encontró el documento de referencia de materias ganadas');
+      console.warn(
+        'Advertencia: No se encontró el documento de referencia de materias ganadas',
+      );
     }
 
     const isChunked = documentImagesToUse.length > 1;
@@ -1008,14 +1048,20 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
       // ignore
     }
     if (pdfText?.trim()) {
-      const nameCarnetFromText = parsePassedSubjectsNameAndCarnetFromText(pdfText);
+      const nameCarnetFromText =
+        parsePassedSubjectsNameAndCarnetFromText(pdfText);
       if (!result.documentStudentName && nameCarnetFromText.documentStudentName)
         result.documentStudentName = nameCarnetFromText.documentStudentName;
-      if (!result.documentIdentificationNumber && nameCarnetFromText.documentIdentificationNumber)
-        result.documentIdentificationNumber = nameCarnetFromText.documentIdentificationNumber;
+      if (
+        !result.documentIdentificationNumber &&
+        nameCarnetFromText.documentIdentificationNumber
+      )
+        result.documentIdentificationNumber =
+          nameCarnetFromText.documentIdentificationNumber;
       const totalPlanMatch = pdfText.match(/Materias\s+del\s+plan:\s*(\d+)/i);
       const passedMatch = pdfText.match(/Materias\s+ganadas:\s*(\d+)/i);
-      if (totalPlanMatch?.[1]) result.totalSubjects = parseInt(totalPlanMatch[1], 10);
+      if (totalPlanMatch?.[1])
+        result.totalSubjects = parseInt(totalPlanMatch[1], 10);
       if (passedMatch?.[1]) result.passedCount = parseInt(passedMatch[1], 10);
     }
     if (result.documentStudentName || result.documentIdentificationNumber) {
@@ -1038,9 +1084,17 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
         result.isValid = false;
       }
     }
-    if (context && result.documentIdentificationNumber && context.expectedIdentificationNumber) {
-      const docCarnet = normalizeForComparison(result.documentIdentificationNumber);
-      const expectedCarnet = normalizeForComparison(context.expectedIdentificationNumber);
+    if (
+      context &&
+      result.documentIdentificationNumber &&
+      context.expectedIdentificationNumber
+    ) {
+      const docCarnet = normalizeForComparison(
+        result.documentIdentificationNumber,
+      );
+      const expectedCarnet = normalizeForComparison(
+        context.expectedIdentificationNumber,
+      );
       if (docCarnet !== expectedCarnet) {
         result.errors.push(
           `El número de carnet del documento ("${result.documentIdentificationNumber}") no coincide con el del estudiante ("${context.expectedIdentificationNumber}").`,
@@ -1060,13 +1114,15 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
     }
 
     if (result.totalSubjects === 0 && result.isValid) {
-      result.warnings.push('No se pudo obtener el total de materias del documento. Verifica que el formato sea correcto.');
+      result.warnings.push(
+        'No se pudo obtener el total de materias del documento. Verifica que el formato sea correcto.',
+      );
     }
 
     return result;
   } catch (error: any) {
     result.isValid = false;
-    
+
     // Manejar errores específicos de OpenAI
     if (error?.status === 429) {
       if (error?.code === 'insufficient_quota') {
@@ -1090,7 +1146,7 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
       const errorMessage = error?.message || 'Error desconocido';
       result.errors.push(`Error al validar con OpenAI: ${errorMessage}`);
     }
-    
+
     console.error('Error en validación OpenAI de materias ganadas:', error);
     return result;
   }
@@ -1224,7 +1280,8 @@ export async function validateEnrollmentProofDocumentWithOpenAI(
     let textFallback: EnrollmentProofFromText | null = null;
     try {
       const pdfText = await extractTextFromPdf(documentPath);
-      if (pdfText?.trim()) textFallback = parseEnrollmentProofFromPdfText(pdfText);
+      if (pdfText?.trim())
+        textFallback = parseEnrollmentProofFromPdfText(pdfText);
     } catch {
       // ignore
     }
@@ -1232,16 +1289,22 @@ export async function validateEnrollmentProofDocumentWithOpenAI(
       if (textFallback.documentStudentName)
         result.documentStudentName = textFallback.documentStudentName;
       if (textFallback.documentIdentificationNumber)
-        result.documentIdentificationNumber = textFallback.documentIdentificationNumber;
+        result.documentIdentificationNumber =
+          textFallback.documentIdentificationNumber;
       if (textFallback.cycle) result.cycle = textFallback.cycle;
       if (
         textFallback.enrolledSubjects?.length &&
         (!result.enrolledSubjects?.length ||
-          textFallback.enrolledSubjects.length >= result.enrolledSubjects.length)
+          textFallback.enrolledSubjects.length >=
+            result.enrolledSubjects.length)
       )
         result.enrolledSubjects = textFallback.enrolledSubjects;
     }
-    if (result.documentStudentName || result.documentIdentificationNumber || result.cycle) {
+    if (
+      result.documentStudentName ||
+      result.documentIdentificationNumber ||
+      result.cycle
+    ) {
       result.warnings = result.warnings.filter(
         (w) =>
           !/no (se )?pudo extraer el nombre/i.test(w) &&
@@ -1262,9 +1325,17 @@ export async function validateEnrollmentProofDocumentWithOpenAI(
         result.isValid = false;
       }
     }
-    if (context && result.documentIdentificationNumber && context.expectedIdentificationNumber) {
-      const docCarnet = normalizeForComparison(result.documentIdentificationNumber);
-      const expectedCarnet = normalizeForComparison(context.expectedIdentificationNumber);
+    if (
+      context &&
+      result.documentIdentificationNumber &&
+      context.expectedIdentificationNumber
+    ) {
+      const docCarnet = normalizeForComparison(
+        result.documentIdentificationNumber,
+      );
+      const expectedCarnet = normalizeForComparison(
+        context.expectedIdentificationNumber,
+      );
       if (docCarnet !== expectedCarnet) {
         result.errors.push(
           `El número de carnet del documento ("${result.documentIdentificationNumber}") no coincide con el del estudiante ("${context.expectedIdentificationNumber}").`,
@@ -1284,13 +1355,22 @@ export async function validateEnrollmentProofDocumentWithOpenAI(
           : 'Se excedió el límite de solicitudes a OpenAI. Intenta más tarde.',
       );
     } else if (err?.status === 401) {
-      result.errors.push('La API key de OpenAI no es válida. Verifica OPENAI_API_KEY en .env');
+      result.errors.push(
+        'La API key de OpenAI no es válida. Verifica OPENAI_API_KEY en .env',
+      );
     } else if (err?.status === 400) {
-      result.errors.push(`Error en la solicitud a OpenAI: ${err?.message || 'Solicitud inválida'}`);
+      result.errors.push(
+        `Error en la solicitud a OpenAI: ${err?.message || 'Solicitud inválida'}`,
+      );
     } else {
-      result.errors.push(`Error al validar con OpenAI: ${(error as Error)?.message || 'Error desconocido'}`);
+      result.errors.push(
+        `Error al validar con OpenAI: ${(error as Error)?.message || 'Error desconocido'}`,
+      );
     }
-    console.error('Error en validación OpenAI comprobante de inscripción:', error);
+    console.error(
+      'Error en validación OpenAI comprobante de inscripción:',
+      error,
+    );
     return result;
   }
 }

@@ -46,4 +46,3 @@ export const PracticeActivitySchema =
 PracticeActivitySchema.index({ practiceProfessionalId: 1 });
 PracticeActivitySchema.index({ status: 1 });
 PracticeActivitySchema.index({ practiceProfessionalId: 1, activityDate: 1 });
-

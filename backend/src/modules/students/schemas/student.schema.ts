@@ -85,11 +85,13 @@ export class Student {
       validationErrors: [String],
       validationWarnings: [String],
       hasValidFormat: Boolean,
-      passedSubjects: [{
-        cycle: String,
-        code: String,
-        subject: String,
-      }],
+      passedSubjects: [
+        {
+          cycle: String,
+          code: String,
+          subject: String,
+        },
+      ],
       totalSubjects: Number,
       passedCount: Number,
       validationAccuracyPercent: Number,
@@ -125,12 +127,14 @@ export class Student {
       documentStudentName: String,
       documentIdentificationNumber: String,
       cycle: String,
-      enrolledSubjects: [{
-        name: String,
-        code: String,
-        startDate: String,
-        endDate: String,
-      }],
+      enrolledSubjects: [
+        {
+          name: String,
+          code: String,
+          startDate: String,
+          endDate: String,
+        },
+      ],
     },
     required: false,
   })
@@ -153,14 +157,16 @@ export class Student {
   };
 
   @Prop({
-    type: [{
-      company: String,
-      position: String,
-      description: String,
-      startDate: Date,
-      endDate: Date,
-      isCurrent: Boolean,
-    }],
+    type: [
+      {
+        company: String,
+        position: String,
+        description: String,
+        startDate: Date,
+        endDate: Date,
+        isCurrent: Boolean,
+      },
+    ],
     required: false,
     default: [],
   })
@@ -174,15 +180,17 @@ export class Student {
   }>;
 
   @Prop({
-    type: [{
-      institution: String,
-      degree: String,
-      field: String,
-      startDate: Date,
-      endDate: Date,
-      isCurrent: Boolean,
-      description: String,
-    }],
+    type: [
+      {
+        institution: String,
+        degree: String,
+        field: String,
+        startDate: Date,
+        endDate: Date,
+        isCurrent: Boolean,
+        description: String,
+      },
+    ],
     required: false,
     default: [],
   })
@@ -206,22 +214,28 @@ export class Student {
   @Prop({
     type: {
       summary: String,
-      languages: [{
-        name: String,
-        level: String,
-      }],
-      certifications: [{
-        name: String,
-        issuer: String,
-        date: Date,
-        expiryDate: Date,
-      }],
-      projects: [{
-        name: String,
-        description: String,
-        technologies: [String],
-        url: String,
-      }],
+      languages: [
+        {
+          name: String,
+          level: String,
+        },
+      ],
+      certifications: [
+        {
+          name: String,
+          issuer: String,
+          date: Date,
+          expiryDate: Date,
+        },
+      ],
+      projects: [
+        {
+          name: String,
+          description: String,
+          technologies: [String],
+          url: String,
+        },
+      ],
     },
     required: false,
   })
@@ -257,4 +271,3 @@ StudentSchema.index({ careerId: 1 });
 StudentSchema.index({ status: 1 });
 StudentSchema.index({ userId: 1 });
 StudentSchema.index({ isActive: 1 });
-

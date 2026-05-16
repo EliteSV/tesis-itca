@@ -186,9 +186,7 @@ export class PracticeProfessionalService {
       .exec();
 
     if (!practice) {
-      throw new NotFoundException(
-        'No tienes una práctica profesional activa',
-      );
+      throw new NotFoundException('No tienes una práctica profesional activa');
     }
 
     const opportunity = practice.opportunity!;
@@ -199,10 +197,7 @@ export class PracticeProfessionalService {
       .sort({ activityDate: -1, createdAt: -1 })
       .exec();
 
-    const totalHours = activities.reduce(
-      (sum, a) => sum + (a.hours || 0),
-      0,
-    );
+    const totalHours = activities.reduce((sum, a) => sum + (a.hours || 0), 0);
     const approvedHours = activities
       .filter((a) => a.status === ActivityStatus.APPROVED)
       .reduce((sum, a) => sum + (a.hours || 0), 0);
@@ -235,9 +230,7 @@ export class PracticeProfessionalService {
       .exec();
 
     if (!practice) {
-      throw new NotFoundException(
-        'No tienes una práctica profesional activa',
-      );
+      throw new NotFoundException('No tienes una práctica profesional activa');
     }
 
     const activityDateStr = createActivityDto.activityDate.split('T')[0];
@@ -297,7 +290,10 @@ export class PracticeProfessionalService {
         activityDate.getUTCFullYear(),
         activityDate.getUTCMonth(),
         activityDate.getUTCDate() - daysToMonday,
-        0, 0, 0, 0,
+        0,
+        0,
+        0,
+        0,
       ),
     );
     const weekEnd = new Date(
@@ -305,7 +301,10 @@ export class PracticeProfessionalService {
         weekStart.getUTCFullYear(),
         weekStart.getUTCMonth(),
         weekStart.getUTCDate() + 6,
-        23, 59, 59, 999,
+        23,
+        59,
+        59,
+        999,
       ),
     );
 
@@ -348,9 +347,7 @@ export class PracticeProfessionalService {
       .exec();
 
     if (!practice) {
-      throw new NotFoundException(
-        'No tienes una práctica profesional activa',
-      );
+      throw new NotFoundException('No tienes una práctica profesional activa');
     }
 
     const skip = (page - 1) * limit;
@@ -588,10 +585,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
     return this.mapActivityToDto(savedActivity);
   }
 
-  async getStudentDetailForCompany(
-    studentId: string,
-    companyUserId: string,
-  ) {
+  async getStudentDetailForCompany(studentId: string, companyUserId: string) {
     const studentUserId = await this.resolveStudentUserId(studentId);
 
     const practice = await this.practiceProfessionalModel
@@ -700,8 +694,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
           'Debes proporcionar un motivo para finalizar la práctica profesional antes de completar las horas requeridas.',
         );
       }
-      practice.earlyTerminationReason =
-        finishDto.earlyTerminationReason.trim();
+      practice.earlyTerminationReason = finishDto.earlyTerminationReason.trim();
     }
 
     practice.practiceEvaluation = { ...finishDto.evaluation };
@@ -712,7 +705,9 @@ No incluyas ningún texto adicional, solo el JSON.`;
     return { message: 'Práctica profesional finalizada exitosamente' };
   }
 
-  async getPracticeHistory(userId: string): Promise<PracticeHistoryResponseDto> {
+  async getPracticeHistory(
+    userId: string,
+  ): Promise<PracticeHistoryResponseDto> {
     const practices = await this.practiceProfessionalModel
       .find({ studentId: new Types.ObjectId(userId) })
       .populate({
@@ -765,7 +760,8 @@ No incluyas ningún texto adicional, solo el JSON.`;
           status = PracticeStatus.EN_CURSO;
         }
 
-        const companyName = opportunity.company?.name ?? 'Empresa no especificada';
+        const companyName =
+          opportunity.company?.name ?? 'Empresa no especificada';
         const companyLogo = opportunity.company?.logo;
 
         return {
@@ -820,10 +816,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
       .sort({ activityDate: -1, createdAt: -1 })
       .exec();
 
-    const totalHours = activities.reduce(
-      (sum, a) => sum + (a.hours || 0),
-      0,
-    );
+    const totalHours = activities.reduce((sum, a) => sum + (a.hours || 0), 0);
     const approvedHours = activities
       .filter((a) => a.status === ActivityStatus.APPROVED)
       .reduce((sum, a) => sum + (a.hours || 0), 0);

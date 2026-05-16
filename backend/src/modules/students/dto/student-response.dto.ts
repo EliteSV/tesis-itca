@@ -220,4 +220,3 @@ export class CreateStudentResponseDto extends StudentResponseDto {
   })
   generatedPassword: string;
 }
-

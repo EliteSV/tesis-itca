@@ -18,4 +18,3 @@ import {
   exports: [CareerCategoriesService],
 })
 export class CareerCategoriesModule {}
-

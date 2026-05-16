@@ -42,4 +42,3 @@ export class CreateActivityDto {
   @IsNotEmpty({ message: 'La maquinaria o herramienta es requerida' })
   equipmentOrTool: string;
 }
-

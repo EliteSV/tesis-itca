@@ -1,10 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApplicationStatus } from '@/modules/opportunities/schemas/application.schema';
 
 export class UpdateApplicationStatusDto {
@@ -25,4 +20,3 @@ export class UpdateApplicationStatusDto {
   @IsOptional()
   rejectionReason?: string;
 }
-

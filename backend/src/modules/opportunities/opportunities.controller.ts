@@ -155,7 +155,8 @@ export class OpportunitiesController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    const careerId = req.user.role === UserRole.COORDINADOR ? req.user.careerId : undefined;
+    const careerId =
+      req.user.role === UserRole.COORDINADOR ? req.user.careerId : undefined;
     return this.opportunitiesService.findAllForAdmin(
       pageNum,
       limitNum,
@@ -274,7 +275,8 @@ export class OpportunitiesController {
   @Get('applications/company')
   @Roles(UserRole.COMPANY)
   @ApiOperation({
-    summary: 'Obtener todas las aplicaciones de las oportunidades de la empresa',
+    summary:
+      'Obtener todas las aplicaciones de las oportunidades de la empresa',
     description:
       'Retorna todas las aplicaciones recibidas para todas las oportunidades de la empresa en sesión, con paginación y filtro por oportunidad y nombre de estudiante',
   })
@@ -303,7 +305,8 @@ export class OpportunitiesController {
   @Get('applications/coordinator')
   @Roles(UserRole.COORDINADOR)
   @ApiOperation({
-    summary: 'Obtener todas las aplicaciones de los estudiantes de la carrera del coordinador',
+    summary:
+      'Obtener todas las aplicaciones de los estudiantes de la carrera del coordinador',
     description:
       'Retorna todas las aplicaciones de los estudiantes de la carrera asignada al coordinador, incluyendo solicitudes a oportunidades de otras carreras. Incluye paginación y filtro por oportunidad y nombre de estudiante',
   })
@@ -319,7 +322,9 @@ export class OpportunitiesController {
     @Query('search') search?: string,
   ) {
     if (!req.user.careerId) {
-      throw new BadRequestException('El coordinador no tiene una carrera asignada');
+      throw new BadRequestException(
+        'El coordinador no tiene una carrera asignada',
+      );
     }
     const pageNumber = page ? parseInt(page, 10) : 1;
     const limitNumber = limit ? parseInt(limit, 10) : 20;
@@ -360,7 +365,9 @@ export class OpportunitiesController {
     @Param('applicationId') applicationId: string,
   ) {
     if (!req.user.careerId) {
-      throw new BadRequestException('El coordinador no tiene una carrera asignada');
+      throw new BadRequestException(
+        'El coordinador no tiene una carrera asignada',
+      );
     }
     return this.opportunitiesService.acceptApplicationByCoordinator(
       applicationId,
@@ -586,8 +593,7 @@ export class OpportunitiesController {
   @Roles(UserRole.ESTUDIANTE)
   @ApiOperation({
     summary: 'Aplicar a una oportunidad laboral',
-    description:
-      'Permite a un estudiante aplicar a una oportunidad laboral',
+    description: 'Permite a un estudiante aplicar a una oportunidad laboral',
   })
   @ApiResponse({
     status: 201,

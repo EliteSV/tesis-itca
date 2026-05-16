@@ -49,4 +49,3 @@ export interface OpportunityTemplates {
   descriptions: string[];
   activities: string[];
 }
-

@@ -276,8 +276,8 @@ export class StudentsService {
           : typeof student.careerId === 'object' &&
               student.careerId !== null &&
               '_id' in student.careerId
-            ? (student.careerId as { _id: Types.ObjectId | string })._id
-                instanceof Types.ObjectId
+            ? (student.careerId as { _id: Types.ObjectId | string })
+                ._id instanceof Types.ObjectId
               ? (student.careerId as { _id: Types.ObjectId })._id.toString()
               : String((student.careerId as { _id: string })._id)
             : String(student.careerId);
@@ -509,7 +509,11 @@ export class StudentsService {
       throw new NotFoundException('Estudiante no encontrado');
     }
 
-    if (updateStudentDto.email || updateStudentDto.firstName || updateStudentDto.lastName) {
+    if (
+      updateStudentDto.email ||
+      updateStudentDto.firstName ||
+      updateStudentDto.lastName
+    ) {
       const studentDoc = await this.studentModel.findById(student._id).exec();
       if (studentDoc && studentDoc.userId) {
         const updateUserData: {
@@ -528,7 +532,10 @@ export class StudentsService {
         }
 
         if (Object.keys(updateUserData).length > 0) {
-          await this.userModel.findByIdAndUpdate(studentDoc.userId, updateUserData);
+          await this.userModel.findByIdAndUpdate(
+            studentDoc.userId,
+            updateUserData,
+          );
         }
       }
     }
@@ -556,7 +563,9 @@ export class StudentsService {
     );
     fs.writeFileSync(tempFilePath, file.buffer);
 
-    let validationResult: Awaited<ReturnType<typeof validateSocialServiceDocumentWithOpenAI>>;
+    let validationResult: Awaited<
+      ReturnType<typeof validateSocialServiceDocumentWithOpenAI>
+    >;
     try {
       const expectedStudentName = [student.firstName, student.lastName]
         .filter(Boolean)
@@ -622,7 +631,9 @@ export class StudentsService {
     );
     fs.writeFileSync(tempFilePath, file.buffer);
 
-    let validationResult: Awaited<ReturnType<typeof validatePassedSubjectsDocumentWithOpenAI>>;
+    let validationResult: Awaited<
+      ReturnType<typeof validatePassedSubjectsDocumentWithOpenAI>
+    >;
     try {
       const expectedStudentName = [student.firstName, student.lastName]
         .filter(Boolean)
@@ -723,7 +734,9 @@ export class StudentsService {
     );
     fs.writeFileSync(tempFilePath, file.buffer);
 
-    let validationResult: Awaited<ReturnType<typeof validateEnrollmentProofDocumentWithOpenAI>>;
+    let validationResult: Awaited<
+      ReturnType<typeof validateEnrollmentProofDocumentWithOpenAI>
+    >;
     try {
       const expectedStudentName = [student.firstName, student.lastName]
         .filter(Boolean)
@@ -753,7 +766,8 @@ export class StudentsService {
       validationErrors: validationResult.errors,
       validationWarnings: validationResult.warnings,
       documentStudentName: validationResult.documentStudentName,
-      documentIdentificationNumber: validationResult.documentIdentificationNumber,
+      documentIdentificationNumber:
+        validationResult.documentIdentificationNumber,
       cycle: validationResult.cycle,
       enrolledSubjects: validationResult.enrolledSubjects,
     };

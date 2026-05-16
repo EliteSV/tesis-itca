@@ -34,4 +34,3 @@ export class CreateCareerCategoryDto {
   @IsOptional()
   requiredProfessionalHours?: number;
 }
-

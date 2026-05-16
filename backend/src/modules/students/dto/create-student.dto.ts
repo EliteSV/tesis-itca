@@ -81,4 +81,3 @@ export class CreateStudentDto {
   @IsNotEmpty({ message: 'La carrera es requerida' })
   careerId: string;
 }
-

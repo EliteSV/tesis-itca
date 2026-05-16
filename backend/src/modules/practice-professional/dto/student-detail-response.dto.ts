@@ -19,4 +19,3 @@ export class StudentDetailResponseDto {
   })
   approvedHours: number;
 }
-

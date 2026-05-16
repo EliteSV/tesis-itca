@@ -1,12 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, MinLength, ValidateNested, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { PracticeEvaluationDto } from './practice-evaluation.dto';
 
 export class FinishPracticeDto {
   @ApiProperty({
-    description: 'Motivo de finalización anticipada (requerido si las horas aprobadas son menores a las horas requeridas)',
-    example: 'El estudiante ha completado los objetivos principales de la práctica antes del tiempo estimado.',
+    description:
+      'Motivo de finalización anticipada (requerido si las horas aprobadas son menores a las horas requeridas)',
+    example:
+      'El estudiante ha completado los objetivos principales de la práctica antes del tiempo estimado.',
     required: false,
   })
   @IsString()
@@ -17,7 +25,8 @@ export class FinishPracticeDto {
   earlyTerminationReason?: string;
 
   @ApiProperty({
-    description: 'Evaluación del trabajo realizado por el estudiante (requerida)',
+    description:
+      'Evaluación del trabajo realizado por el estudiante (requerida)',
     type: PracticeEvaluationDto,
   })
   @IsObject()

@@ -13,7 +13,9 @@ export class EmailService {
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>('resend.apiKey');
     if (!apiKey) {
-      throw new Error('RESEND_API_KEY no está configurado en las variables de entorno');
+      throw new Error(
+        'RESEND_API_KEY no está configurado en las variables de entorno',
+      );
     }
     this.resend = new Resend(apiKey);
   }
@@ -35,7 +37,8 @@ export class EmailService {
       const result = await this.resend.emails.send({
         from: `${fromName} <${fromEmail}>`,
         to: [email],
-        subject: 'Invitación para registrarse en Prácticas Profesionales ITCA-FEPADE',
+        subject:
+          'Invitación para registrarse en Prácticas Profesionales ITCA-FEPADE',
         html: emailHtml,
       });
 
@@ -45,7 +48,10 @@ export class EmailService {
     } catch (error: any) {
       console.error('Error al enviar correo electrónico:', error);
 
-      if (error?.message?.includes('Invalid API key') || error?.status === 401) {
+      if (
+        error?.message?.includes('Invalid API key') ||
+        error?.status === 401
+      ) {
         throw new InternalServerErrorException(
           'La API key de Resend no es válida. Por favor, verifica la configuración de RESEND_API_KEY en el archivo .env',
         );
