@@ -182,7 +182,11 @@ export function SettingsPage() {
         )}
       </div>
 
-      {currentTab === "profile" && !shouldChangePassword && <UserProfileForm />}
+      {currentTab === "profile" && !shouldChangePassword && (<>
+      <UserProfileForm />
+      <div className="mb-6" />
+      <StudentProfileForm />
+      </>)}
 
       {currentTab === "password" && <ChangePasswordForm />}
 
@@ -213,7 +217,6 @@ export function SettingsPage() {
             </p>
           </div>
           <StudentCareerInfo />
-          <StudentProfileForm />
         </div>
       )}
 
