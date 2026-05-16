@@ -80,7 +80,7 @@ export interface Student {
   userId: string;
   isActive: boolean;
   socialServiceDocument?: {
-    filePath: string;
+    fileData?: string;
     fileName: string;
     isValidated: boolean;
     validatedAt?: string;
@@ -90,7 +90,7 @@ export interface Student {
     hasValidFormat?: boolean;
   };
   passedSubjectsDocument?: {
-    filePath: string;
+    fileData?: string;
     fileName: string;
     isValidated: boolean;
     validatedAt?: string;
@@ -109,7 +109,7 @@ export interface Student {
     }>;
   };
   enrollmentProofDocument?: {
-    filePath: string;
+    fileData?: string;
     fileName: string;
     isValidated: boolean;
     validatedAt?: string;

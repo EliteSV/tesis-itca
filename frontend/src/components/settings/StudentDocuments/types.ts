@@ -1,5 +1,5 @@
 export interface SocialServiceDocumentData {
-  filePath: string;
+  fileData?: string;
   fileName: string;
   isValidated: boolean;
   validatedAt?: string;
@@ -28,7 +28,7 @@ export interface SocialServiceStepProps {
 }
 
 export interface PassedSubjectsDocumentData {
-  filePath: string;
+  fileData?: string;
   fileName: string;
   isValidated: boolean;
   validatedAt?: string;
@@ -64,7 +64,7 @@ export interface PassedSubjectsStepProps {
 }
 
 export interface EnrollmentProofDocumentData {
-  filePath: string;
+  fileData?: string;
   fileName: string;
   isValidated: boolean;
   validatedAt?: string;

@@ -10,6 +10,7 @@ import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import type { MulterFile } from '@/common/types/multer.types';
 import {
@@ -548,35 +549,38 @@ export class StudentsService {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    const filePath = path.join(file.destination, file.filename);
-    const expectedStudentName = [student.firstName, student.lastName]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    const validationResult = await validateSocialServiceDocumentWithOpenAI(
-      filePath,
-      this.configService,
-      {
-        expectedStudentName,
-        expectedIdentificationNumber: student.identificationNumber ?? '',
-      },
+    // Write buffer to a temp file so CLI tools (pdftotext, pdftoppm) can read it
+    const tempFilePath = path.join(
+      os.tmpdir(),
+      `social-service-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`,
     );
+    fs.writeFileSync(tempFilePath, file.buffer);
 
-    // Eliminar documento anterior si existe
-    if (student.socialServiceDocument?.filePath) {
-      const oldFilePath = student.socialServiceDocument.filePath;
-      if (fs.existsSync(oldFilePath) && oldFilePath !== filePath) {
-        try {
-          fs.unlinkSync(oldFilePath);
-        } catch (error) {
-          console.error('Error deleting old document:', error);
-        }
+    let validationResult: Awaited<ReturnType<typeof validateSocialServiceDocumentWithOpenAI>>;
+    try {
+      const expectedStudentName = [student.firstName, student.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      validationResult = await validateSocialServiceDocumentWithOpenAI(
+        tempFilePath,
+        this.configService,
+        {
+          expectedStudentName,
+          expectedIdentificationNumber: student.identificationNumber ?? '',
+        },
+      );
+    } finally {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (error) {
+        console.error('Error deleting temp social service document:', error);
       }
     }
 
-    // Guardar el documento y la respuesta de validación (siempre, incluso si falla)
-    const documentData = {
-      filePath: filePath,
+    // Guardar el documento y la respuesta de validación en MongoDB (siempre, incluso si falla)
+    student.socialServiceDocument = {
+      fileData: file.buffer.toString('base64'),
       fileName: file.originalname,
       isValidated: validationResult.isValid,
       validatedAt: new Date(),
@@ -585,8 +589,6 @@ export class StudentsService {
       hasValidStamp: validationResult.hasValidStamp,
       hasValidFormat: validationResult.hasValidFormat,
     };
-
-    student.socialServiceDocument = documentData;
     await student.save();
 
     // Si la validación falla, lanzar error pero el archivo ya está guardado
@@ -614,34 +616,36 @@ export class StudentsService {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    const filePath = path.join(file.destination, file.filename);
-    const expectedStudentName = [student.firstName, student.lastName]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    const validationResult = await validatePassedSubjectsDocumentWithOpenAI(
-      filePath,
-      this.configService,
-      {
-        expectedStudentName,
-        expectedIdentificationNumber: student.identificationNumber ?? '',
-      },
+    const tempFilePath = path.join(
+      os.tmpdir(),
+      `passed-subjects-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`,
     );
+    fs.writeFileSync(tempFilePath, file.buffer);
 
-    // Eliminar documento anterior si existe
-    if (student.passedSubjectsDocument?.filePath) {
-      const oldFilePath = student.passedSubjectsDocument.filePath;
-      if (fs.existsSync(oldFilePath) && oldFilePath !== filePath) {
-        try {
-          fs.unlinkSync(oldFilePath);
-        } catch (error) {
-          console.error('Error deleting old document:', error);
-        }
+    let validationResult: Awaited<ReturnType<typeof validatePassedSubjectsDocumentWithOpenAI>>;
+    try {
+      const expectedStudentName = [student.firstName, student.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      validationResult = await validatePassedSubjectsDocumentWithOpenAI(
+        tempFilePath,
+        this.configService,
+        {
+          expectedStudentName,
+          expectedIdentificationNumber: student.identificationNumber ?? '',
+        },
+      );
+    } finally {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (error) {
+        console.error('Error deleting temp passed subjects document:', error);
       }
     }
 
-    const documentData = {
-      filePath: filePath,
+    student.passedSubjectsDocument = {
+      fileData: file.buffer.toString('base64'),
       fileName: file.originalname,
       isValidated: validationResult.isValid,
       validatedAt: new Date(),
@@ -653,8 +657,6 @@ export class StudentsService {
       passedCount: validationResult.passedCount,
       validationAccuracyPercent: validationResult.validationAccuracyPercent,
     };
-
-    student.passedSubjectsDocument = documentData;
     await student.save();
 
     if (!validationResult.isValid) {
@@ -681,19 +683,6 @@ export class StudentsService {
       throw new NotFoundException('Estudiante no encontrado');
     }
 
-    // Eliminar archivo físico si existe
-    if (student.socialServiceDocument?.filePath) {
-      const filePath = student.socialServiceDocument.filePath;
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          console.error('Error deleting social service document file:', error);
-        }
-      }
-    }
-
-    // Limpiar el documento del estudiante
     student.socialServiceDocument = undefined;
     await student.save();
 
@@ -709,19 +698,6 @@ export class StudentsService {
       throw new NotFoundException('Estudiante no encontrado');
     }
 
-    // Eliminar archivo físico si existe
-    if (student.passedSubjectsDocument?.filePath) {
-      const filePath = student.passedSubjectsDocument.filePath;
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          console.error('Error deleting passed subjects document file:', error);
-        }
-      }
-    }
-
-    // Limpiar el documento del estudiante
     student.passedSubjectsDocument = undefined;
     await student.save();
 
@@ -741,33 +717,36 @@ export class StudentsService {
       throw new BadRequestException('No se proporcionó ningún archivo');
     }
 
-    const filePath = path.join(file.destination, file.filename);
-    const expectedStudentName = [student.firstName, student.lastName]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    const validationResult = await validateEnrollmentProofDocumentWithOpenAI(
-      filePath,
-      this.configService,
-      {
-        expectedStudentName,
-        expectedIdentificationNumber: student.identificationNumber ?? '',
-      },
+    const tempFilePath = path.join(
+      os.tmpdir(),
+      `enrollment-proof-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`,
     );
+    fs.writeFileSync(tempFilePath, file.buffer);
 
-    if (student.enrollmentProofDocument?.filePath) {
-      const oldFilePath = student.enrollmentProofDocument.filePath;
-      if (fs.existsSync(oldFilePath) && oldFilePath !== filePath) {
-        try {
-          fs.unlinkSync(oldFilePath);
-        } catch (error) {
-          console.error('Error deleting old enrollment proof document:', error);
-        }
+    let validationResult: Awaited<ReturnType<typeof validateEnrollmentProofDocumentWithOpenAI>>;
+    try {
+      const expectedStudentName = [student.firstName, student.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      validationResult = await validateEnrollmentProofDocumentWithOpenAI(
+        tempFilePath,
+        this.configService,
+        {
+          expectedStudentName,
+          expectedIdentificationNumber: student.identificationNumber ?? '',
+        },
+      );
+    } finally {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (error) {
+        console.error('Error deleting temp enrollment proof document:', error);
       }
     }
 
-    const documentData = {
-      filePath,
+    student.enrollmentProofDocument = {
+      fileData: file.buffer.toString('base64'),
       fileName: file.originalname,
       isValidated: validationResult.isValid,
       validatedAt: new Date(),
@@ -778,8 +757,6 @@ export class StudentsService {
       cycle: validationResult.cycle,
       enrolledSubjects: validationResult.enrolledSubjects,
     };
-
-    student.enrollmentProofDocument = documentData;
     await student.save();
 
     if (!validationResult.isValid) {
@@ -800,17 +777,6 @@ export class StudentsService {
 
     if (!student) {
       throw new NotFoundException('Estudiante no encontrado');
-    }
-
-    if (student.enrollmentProofDocument?.filePath) {
-      const filePath = student.enrollmentProofDocument.filePath;
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          console.error('Error deleting enrollment proof document file:', error);
-        }
-      }
     }
 
     student.enrollmentProofDocument = undefined;

@@ -54,7 +54,7 @@ export class Student {
 
   @Prop({
     type: {
-      filePath: String,
+      fileData: String,
       fileName: String,
       isValidated: Boolean,
       validatedAt: Date,
@@ -66,7 +66,7 @@ export class Student {
     required: false,
   })
   socialServiceDocument?: {
-    filePath: string;
+    fileData: string;
     fileName: string;
     isValidated: boolean;
     validatedAt?: Date;
@@ -78,7 +78,7 @@ export class Student {
 
   @Prop({
     type: {
-      filePath: String,
+      fileData: String,
       fileName: String,
       isValidated: Boolean,
       validatedAt: Date,
@@ -97,7 +97,7 @@ export class Student {
     required: false,
   })
   passedSubjectsDocument?: {
-    filePath: string;
+    fileData: string;
     fileName: string;
     isValidated: boolean;
     validatedAt?: Date;
@@ -116,7 +116,7 @@ export class Student {
 
   @Prop({
     type: {
-      filePath: String,
+      fileData: String,
       fileName: String,
       isValidated: Boolean,
       validatedAt: Date,
@@ -135,7 +135,7 @@ export class Student {
     required: false,
   })
   enrollmentProofDocument?: {
-    filePath: string;
+    fileData: string;
     fileName: string;
     isValidated: boolean;
     validatedAt?: Date;

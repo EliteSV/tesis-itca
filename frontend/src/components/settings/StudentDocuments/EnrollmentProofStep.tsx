@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -15,12 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { EnrollmentProofStepProps } from './types';
 
-const DOCUMENT_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-function documentPreviewUrl(filePath: string | undefined): string | null {
-  if (!filePath) return null;
-  const path = filePath.replace(/^\.?\//, '').replace(/\\/g, '/');
-  return `${DOCUMENT_BASE_URL}/${path}`;
+function base64ToBlobUrl(base64: string): string {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 }
 
 export function EnrollmentProofStep({
@@ -39,6 +39,30 @@ export function EnrollmentProofStep({
   onError,
   onStepChange,
 }: EnrollmentProofStepProps) {
+  const [storedDocumentUrl, setStoredDocumentUrl] = useState<string | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
+    if (enrollmentDoc?.fileData) {
+      const url = base64ToBlobUrl(enrollmentDoc.fileData);
+      blobUrlRef.current = url;
+      setStoredDocumentUrl(url);
+    } else {
+      setStoredDocumentUrl(null);
+    }
+  }, [enrollmentDoc?.fileData]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
+
   const handleDelete = async () => {
     if (
       !confirm(
@@ -61,6 +85,8 @@ export function EnrollmentProofStep({
     }
   };
 
+  const activeDocumentUrl = previewUrl && selectedFile ? previewUrl : storedDocumentUrl;
+
   return (
     <div className="space-y-6">
       {enrollmentDoc && (
@@ -78,9 +104,7 @@ export function EnrollmentProofStep({
                     {enrollmentDoc.validatedAt && (
                       <span className="block mt-1 text-xs">
                         Validado el:{' '}
-                        {new Date(enrollmentDoc.validatedAt).toLocaleString(
-                          'es',
-                        )}
+                        {new Date(enrollmentDoc.validatedAt).toLocaleString('es')}
                       </span>
                     )}
                     {enrollmentDoc.cycle && (
@@ -95,9 +119,9 @@ export function EnrollmentProofStep({
                           {enrollmentDoc.enrolledSubjects.length}
                         </span>
                       )}
-                    {enrollmentDoc.filePath && (
+                    {storedDocumentUrl && (
                       <a
-                        href={`${DOCUMENT_BASE_URL}/${enrollmentDoc.filePath}`}
+                        href={storedDocumentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block mt-2 text-sm underline hover:text-green-800 dark:hover:text-green-200"
@@ -130,14 +154,12 @@ export function EnrollmentProofStep({
                     {enrollmentDoc.validatedAt && (
                       <span className="block mt-1 text-xs">
                         Validado el:{' '}
-                        {new Date(enrollmentDoc.validatedAt).toLocaleString(
-                          'es',
-                        )}
+                        {new Date(enrollmentDoc.validatedAt).toLocaleString('es')}
                       </span>
                     )}
-                    {enrollmentDoc.filePath && (
+                    {storedDocumentUrl && (
                       <a
-                        href={`${DOCUMENT_BASE_URL}/${enrollmentDoc.filePath}`}
+                        href={storedDocumentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block mt-2 text-sm underline hover:text-red-800 dark:hover:text-red-200"
@@ -315,7 +337,7 @@ export function EnrollmentProofStep({
         </div>
       )}
 
-      {((previewUrl && selectedFile) || enrollmentDoc?.filePath) && (
+      {activeDocumentUrl && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <Eye className="h-4 w-4" />
@@ -323,14 +345,14 @@ export function EnrollmentProofStep({
           </label>
           <div className="border-2 border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900">
             <object
-              key={previewUrl && selectedFile ? previewUrl : documentPreviewUrl(enrollmentDoc?.filePath) ?? ''}
-              data={previewUrl && selectedFile ? previewUrl : documentPreviewUrl(enrollmentDoc?.filePath) ?? ''}
+              key={activeDocumentUrl}
+              data={activeDocumentUrl}
               type="application/pdf"
               className="w-full h-[600px]"
               aria-label="Previsualización del documento"
             >
               <iframe
-                src={previewUrl && selectedFile ? previewUrl : documentPreviewUrl(enrollmentDoc?.filePath) ?? ''}
+                src={activeDocumentUrl}
                 title="Previsualización del documento"
                 className="w-full h-[600px]"
               />

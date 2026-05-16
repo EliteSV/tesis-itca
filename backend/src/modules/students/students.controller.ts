@@ -14,9 +14,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import * as fs from 'fs';
+import { memoryStorage } from 'multer';
 import type { MulterFile } from '@/common/types/multer.types';
 import {
   ApiTags,
@@ -120,29 +118,7 @@ export class StudentsController {
   @UseGuards(StudentOwnershipGuard)
   @UseInterceptors(
     FileInterceptor('document', {
-      storage: diskStorage({
-        destination: (
-          _req: unknown,
-          _file: { originalname?: string },
-          cb: (error: Error | null, destination: string) => void,
-        ) => {
-          const uploadsDir = './uploads/documents';
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (
-          _req: unknown,
-          file: { originalname?: string },
-          cb: (error: Error | null, filename: string) => void,
-        ) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname || '');
-          cb(null, `social-service-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (
         _req: unknown,
         file: { mimetype?: string },
@@ -199,29 +175,7 @@ export class StudentsController {
   @UseGuards(StudentOwnershipGuard)
   @UseInterceptors(
     FileInterceptor('document', {
-      storage: diskStorage({
-        destination: (
-          _req: unknown,
-          _file: { originalname?: string },
-          cb: (error: Error | null, destination: string) => void,
-        ) => {
-          const uploadsDir = './uploads/documents';
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (
-          _req: unknown,
-          file: { originalname?: string },
-          cb: (error: Error | null, filename: string) => void,
-        ) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname || '');
-          cb(null, `passed-subjects-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (
         _req: unknown,
         file: { mimetype?: string },
@@ -322,29 +276,7 @@ export class StudentsController {
   @UseGuards(StudentOwnershipGuard)
   @UseInterceptors(
     FileInterceptor('document', {
-      storage: diskStorage({
-        destination: (
-          _req: unknown,
-          _file: { originalname?: string },
-          cb: (error: Error | null, destination: string) => void,
-        ) => {
-          const uploadsDir = './uploads/documents';
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (
-          _req: unknown,
-          file: { originalname?: string },
-          cb: (error: Error | null, filename: string) => void,
-        ) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname || '');
-          cb(null, `enrollment-proof-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (
         _req: unknown,
         file: { mimetype?: string },
