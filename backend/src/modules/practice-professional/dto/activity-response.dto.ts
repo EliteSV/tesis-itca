@@ -5,8 +5,8 @@ export class ActivityResponseDto {
   @ApiProperty({ description: 'ID de la actividad' })
   _id: string;
 
-  @ApiProperty({ description: 'ID de la aplicación asociada' })
-  applicationId: string;
+  @ApiProperty({ description: 'ID de la práctica profesional asociada' })
+  practiceProfessionalId: string;
 
   @ApiProperty({ description: 'Descripción de la actividad' })
   description: string;

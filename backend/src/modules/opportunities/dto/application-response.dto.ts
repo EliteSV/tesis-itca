@@ -38,12 +38,6 @@ export class ApplicationResponseDto {
   })
   matchScore?: number;
 
-  @ApiPropertyOptional({
-    description: 'Fecha de finalización de la práctica profesional',
-    type: Date,
-  })
-  finalizedAt?: Date;
-
   @ApiProperty({ description: 'Fecha de creación' })
   createdAt: Date;
 

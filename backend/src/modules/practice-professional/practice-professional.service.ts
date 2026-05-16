@@ -13,9 +13,13 @@ import {
   ActivityStatus,
 } from './schemas/practice-activity.schema';
 import {
+  PracticeProfessional,
+  PracticeProfessionalDocument,
+  PracticeStatus,
+} from './schemas/practice-professional.schema';
+import {
   Application,
   ApplicationDocument,
-  ApplicationStatus,
 } from '@/modules/opportunities/schemas/application.schema';
 import {
   Opportunity,
@@ -32,10 +36,7 @@ import { PracticeProfessionalResponseDto } from './dto/practice-professional-res
 import { ActivityResponseDto } from './dto/activity-response.dto';
 import { ActivitiesResponseDto } from './dto/activities-response.dto';
 import { PracticeHistoryResponseDto } from './dto/practice-history-response.dto';
-import {
-  PracticeHistoryItemDto,
-  PracticeStatus,
-} from './dto/practice-history-item.dto';
+import { PracticeHistoryItemDto } from './dto/practice-history-item.dto';
 import { StudentsService } from '@/modules/students/students.service';
 import { HolidaysService } from './holidays.service';
 
@@ -44,6 +45,8 @@ export class PracticeProfessionalService {
   constructor(
     @InjectModel(PracticeActivity.name)
     private practiceActivityModel: Model<PracticeActivityDocument>,
+    @InjectModel(PracticeProfessional.name)
+    private practiceProfessionalModel: Model<PracticeProfessionalDocument>,
     @InjectModel(Application.name)
     private applicationModel: Model<ApplicationDocument>,
     @InjectModel(Opportunity.name)
@@ -71,224 +74,155 @@ export class PracticeProfessionalService {
     return user.companyId.toString();
   }
 
-  async getPracticeProfessional(
-    userId: string,
-  ): Promise<PracticeProfessionalResponseDto> {
-    const acceptedApplication = await this.applicationModel
-      .findOne({
-        studentId: new Types.ObjectId(userId),
-        status: ApplicationStatus.ACCEPTED,
-      })
-      .populate({
-        path: 'opportunityId',
-        populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
-        ],
-      })
+  private async resolveStudentUserId(
+    studentId: string,
+  ): Promise<Types.ObjectId> {
+    const student = await this.studentModel
+      .findById(studentId)
+      .select('userId')
       .lean()
       .exec();
 
-    if (!acceptedApplication) {
+    if (student?.userId) {
+      const val = student.userId;
+      return val instanceof Types.ObjectId
+        ? val
+        : new Types.ObjectId(String(val));
+    }
+
+    try {
+      return new Types.ObjectId(studentId);
+    } catch {
+      throw new NotFoundException('Estudiante no encontrado');
+    }
+  }
+
+  private async verifyCompanyAccess(
+    opportunity: OpportunityDocument,
+    companyUserId: string,
+  ): Promise<void> {
+    const opportunityCompanyId = opportunity.companyId.toString();
+    const responsibleUserId = opportunity.responsibleUserId?.toString();
+    const userCompanyId = await this.getCompanyIdByUserId(companyUserId);
+
+    if (
+      opportunityCompanyId !== userCompanyId &&
+      (!responsibleUserId || responsibleUserId !== companyUserId)
+    ) {
+      throw new BadRequestException(
+        'No tienes permiso para ver las actividades de este estudiante',
+      );
+    }
+  }
+
+  private mapActivityToDto(
+    activity: PracticeActivityDocument,
+    evaluation?: { type: 'warning' | 'approval'; message: string },
+  ): ActivityResponseDto {
+    return {
+      _id: activity._id.toString(),
+      practiceProfessionalId: activity.practiceProfessionalId.toString(),
+      description: activity.description,
+      activityDate: activity.activityDate,
+      hours: activity.hours,
+      equipmentOrTool: activity.equipmentOrTool,
+      status: activity.status,
+      rejectionReason: activity.rejectionReason,
+      evaluation,
+      createdAt: activity.createdAt,
+      updatedAt: activity.updatedAt,
+    };
+  }
+
+  private mapOpportunity(opportunity: OpportunityDocument) {
+    return {
+      _id: opportunity._id.toString(),
+      title: opportunity.title,
+      description: opportunity.description,
+      activities: opportunity.activities,
+      careerId: opportunity.careerId.toString(),
+      companyId: opportunity.companyId.toString(),
+      responsibleUserId: opportunity.responsibleUserId?.toString(),
+      totalHours: opportunity.totalHours,
+      availablePositions: opportunity.availablePositions,
+      modality: opportunity.modality,
+      workType: opportunity.workType,
+      expirationDate: opportunity.expirationDate,
+      status: opportunity.status,
+      isActive: opportunity.isActive,
+      shareToken: opportunity.shareToken,
+      createdAt: opportunity.createdAt,
+      updatedAt: opportunity.updatedAt,
+      career: opportunity.career
+        ? {
+            _id: opportunity.career._id.toString(),
+            name: opportunity.career.name,
+            code: opportunity.career.code,
+          }
+        : undefined,
+      company: opportunity.company
+        ? {
+            _id: opportunity.company._id.toString(),
+            name: opportunity.company.name,
+            logo: opportunity.company.logo,
+          }
+        : undefined,
+    };
+  }
+
+  async getPracticeProfessional(
+    userId: string,
+  ): Promise<PracticeProfessionalResponseDto> {
+    const practice = await this.practiceProfessionalModel
+      .findOne({ studentId: new Types.ObjectId(userId), finalizedAt: null })
+      .populate({
+        path: 'opportunity',
+        populate: [
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
+        ],
+      })
+      .populate('application')
+      .exec();
+
+    if (!practice) {
       throw new NotFoundException(
         'No tienes una práctica profesional activa',
       );
     }
 
-    // Obtener todas las actividades para calcular totales (sin paginación para estadísticas)
+    const opportunity = practice.opportunity!;
+    const application = practice.application!;
+
     const activities = await this.practiceActivityModel
-      .find({
-        applicationId: acceptedApplication._id,
-      })
+      .find({ practiceProfessionalId: practice._id })
       .sort({ activityDate: -1, createdAt: -1 })
-      .lean()
       .exec();
 
     const totalHours = activities.reduce(
-      (sum, activity) => sum + (activity.hours || 0),
+      (sum, a) => sum + (a.hours || 0),
       0,
     );
-
     const approvedHours = activities
-      .filter((activity) => activity.status === ActivityStatus.APPROVED)
-      .reduce((sum, activity) => sum + (activity.hours || 0), 0);
-
-    const applicationObj = acceptedApplication as unknown as {
-      _id: Types.ObjectId;
-      opportunityId: unknown;
-      studentId: Types.ObjectId;
-      coverLetter?: string;
-      status: string;
-      rejectionReason?: string;
-      finalizedAt?: Date;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-
-    const opportunityIdValue = applicationObj.opportunityId;
-    let opportunity: any = null;
-
-    if (opportunityIdValue) {
-      if (
-        typeof opportunityIdValue === 'object' &&
-        opportunityIdValue !== null &&
-        '_id' in opportunityIdValue
-      ) {
-        opportunity = opportunityIdValue;
-      } else {
-        opportunity = await this.opportunityModel
-          .findById(opportunityIdValue)
-          .populate('careerId', 'name code')
-          .populate('companyId', 'name logo')
-          .lean()
-          .exec();
-      }
-    }
-
-    if (!opportunity) {
-      throw new NotFoundException('Oportunidad no encontrada');
-    }
-
-    const activitiesResponse: ActivityResponseDto[] = activities.map(
-      (activity) => {
-        const activityObj = activity as unknown as {
-          _id: Types.ObjectId;
-          applicationId: Types.ObjectId;
-          description: string;
-          activityDate: Date;
-          hours: number;
-          equipmentOrTool: string;
-          status: ActivityStatus;
-          rejectionReason?: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-
-        return {
-          _id: activityObj._id.toString(),
-          applicationId: activityObj.applicationId.toString(),
-          description: activityObj.description,
-          activityDate: activityObj.activityDate,
-          hours: activityObj.hours,
-          equipmentOrTool: activityObj.equipmentOrTool,
-          status: activityObj.status,
-          rejectionReason: activityObj.rejectionReason,
-          createdAt: activityObj.createdAt,
-          updatedAt: activityObj.updatedAt,
-        };
-      },
-    );
+      .filter((a) => a.status === ActivityStatus.APPROVED)
+      .reduce((sum, a) => sum + (a.hours || 0), 0);
 
     return {
       application: {
-        _id: applicationObj._id.toString(),
-        opportunityId:
-          typeof opportunity._id === 'string'
-            ? opportunity._id
-            : opportunity._id.toString(),
-        studentId: applicationObj.studentId.toString(),
-        coverLetter: applicationObj.coverLetter,
-        status: applicationObj.status as ApplicationStatus,
-        rejectionReason: applicationObj.rejectionReason,
-        finalizedAt: applicationObj.finalizedAt,
-        createdAt: applicationObj.createdAt,
-        updatedAt: applicationObj.updatedAt,
+        _id: application._id.toString(),
+        opportunityId: practice.opportunityId.toString(),
+        studentId: application.studentId.toString(),
+        coverLetter: application.coverLetter,
+        status: application.status,
+        rejectionReason: application.rejectionReason,
+        createdAt: application.createdAt,
+        updatedAt: application.updatedAt,
       },
-      opportunity: {
-        _id:
-          typeof opportunity._id === 'string'
-            ? opportunity._id
-            : opportunity._id.toString(),
-        title: opportunity.title,
-        description: opportunity.description,
-        activities: opportunity.activities,
-        careerId:
-          typeof opportunity.careerId === 'object' &&
-          opportunity.careerId !== null &&
-          '_id' in opportunity.careerId
-            ? typeof (opportunity.careerId as { _id: unknown })._id === 'string'
-              ? (opportunity.careerId as { _id: string })._id
-              : (opportunity.careerId as { _id: Types.ObjectId })._id.toString()
-            : typeof opportunity.careerId === 'string'
-              ? opportunity.careerId
-              : '',
-        companyId:
-          typeof opportunity.companyId === 'object' &&
-          opportunity.companyId !== null &&
-          '_id' in opportunity.companyId
-            ? typeof (opportunity.companyId as { _id: unknown })._id === 'string'
-              ? (opportunity.companyId as { _id: string })._id
-              : (opportunity.companyId as { _id: Types.ObjectId })._id.toString()
-            : typeof opportunity.companyId === 'string'
-              ? opportunity.companyId
-              : '',
-        responsibleUserId: opportunity.responsibleUserId
-          ? typeof opportunity.responsibleUserId === 'string'
-            ? opportunity.responsibleUserId
-            : opportunity.responsibleUserId.toString()
-          : undefined,
-        totalHours: opportunity.totalHours,
-        availablePositions: opportunity.availablePositions,
-        modality: opportunity.modality,
-        workType: opportunity.workType,
-        expirationDate: opportunity.expirationDate,
-        status: opportunity.status,
-        isActive: opportunity.isActive,
-        shareToken: opportunity.shareToken,
-        createdAt: opportunity.createdAt,
-        updatedAt: opportunity.updatedAt,
-        career:
-          opportunity.careerId &&
-          typeof opportunity.careerId === 'object' &&
-          opportunity.careerId !== null &&
-          !(opportunity.careerId instanceof Types.ObjectId) &&
-          '_id' in opportunity.careerId &&
-          'name' in opportunity.careerId
-            ? {
-                _id:
-                  typeof (opportunity.careerId as { _id: Types.ObjectId | string })
-                    ._id === 'string'
-                    ? (opportunity.careerId as { _id: string })._id
-                    : (
-                        opportunity.careerId as { _id: Types.ObjectId }
-                      )._id.toString(),
-                name:
-                  (opportunity.careerId as { name?: string }).name || '',
-                code:
-                  (opportunity.careerId as { code?: string }).code || '',
-              }
-            : undefined,
-        company:
-          opportunity.companyId &&
-          typeof opportunity.companyId === 'object' &&
-          opportunity.companyId !== null &&
-          !(opportunity.companyId instanceof Types.ObjectId) &&
-          '_id' in opportunity.companyId &&
-          'name' in opportunity.companyId
-            ? {
-                _id:
-                  typeof (
-                    opportunity.companyId as { _id: Types.ObjectId | string }
-                  )._id === 'string'
-                    ? (opportunity.companyId as { _id: string })._id
-                    : (
-                        opportunity.companyId as { _id: Types.ObjectId }
-                      )._id.toString(),
-                name:
-                  (opportunity.companyId as { name?: string }).name || '',
-                logo: (opportunity.companyId as { logo?: string }).logo,
-              }
-            : undefined,
-      },
-      activities: activitiesResponse,
+      opportunity: this.mapOpportunity(opportunity),
+      activities: activities.map((a) => this.mapActivityToDto(a)),
       totalHours,
       approvedHours,
-      status: applicationObj.finalizedAt
-        ? PracticeStatus.FINALIZADA
-        : approvedHours >= (opportunity?.totalHours || 0) &&
-            (opportunity?.totalHours || 0) > 0
-          ? PracticeStatus.FINALIZADA
-          : PracticeStatus.EN_CURSO,
+      status: practice.status,
     };
   }
 
@@ -296,14 +230,11 @@ export class PracticeProfessionalService {
     userId: string,
     createActivityDto: CreateActivityDto,
   ): Promise<ActivityResponseDto> {
-    const acceptedApplication = await this.applicationModel
-      .findOne({
-        studentId: new Types.ObjectId(userId),
-        status: ApplicationStatus.ACCEPTED,
-      })
+    const practice = await this.practiceProfessionalModel
+      .findOne({ studentId: new Types.ObjectId(userId), finalizedAt: null })
       .exec();
 
-    if (!acceptedApplication) {
+    if (!practice) {
       throw new NotFoundException(
         'No tienes una práctica profesional activa',
       );
@@ -335,7 +266,7 @@ export class PracticeProfessionalService {
 
     const existingActivities = await this.practiceActivityModel
       .find({
-        applicationId: acceptedApplication._id,
+        practiceProfessionalId: practice._id,
         status: {
           $in: [ActivityStatus.APPROVED, ActivityStatus.PENDING_APPROVAL],
         },
@@ -345,12 +276,11 @@ export class PracticeProfessionalService {
 
     const activitiesOnSameDate = existingActivities.filter((activity) => {
       const actDate = new Date(activity.activityDate);
-      const actDateStr = actDate.toISOString().split('T')[0];
-      return actDateStr === activityDateStr;
+      return actDate.toISOString().split('T')[0] === activityDateStr;
     });
 
     const dailyHours = activitiesOnSameDate.reduce(
-      (sum, activity) => sum + (activity.hours || 0),
+      (sum, a) => sum + (a.hours || 0),
       0,
     );
 
@@ -360,35 +290,36 @@ export class PracticeProfessionalService {
       );
     }
 
-    const weekStartDate = new Date(activityDate);
-    const dayOfWeek = weekStartDate.getUTCDay();
+    const dayOfWeek = activityDate.getUTCDay();
     const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const mondayYear = weekStartDate.getUTCFullYear();
-    const mondayMonth = weekStartDate.getUTCMonth();
-    const mondayDay = weekStartDate.getUTCDate() - daysToMonday;
     const weekStart = new Date(
-      Date.UTC(mondayYear, mondayMonth, mondayDay, 0, 0, 0, 0),
+      Date.UTC(
+        activityDate.getUTCFullYear(),
+        activityDate.getUTCMonth(),
+        activityDate.getUTCDate() - daysToMonday,
+        0, 0, 0, 0,
+      ),
     );
-
-    const weekEndYear = weekStart.getUTCFullYear();
-    const weekEndMonth = weekStart.getUTCMonth();
-    const weekEndDay = weekStart.getUTCDate() + 6;
     const weekEnd = new Date(
-      Date.UTC(weekEndYear, weekEndMonth, weekEndDay, 23, 59, 59, 999),
+      Date.UTC(
+        weekStart.getUTCFullYear(),
+        weekStart.getUTCMonth(),
+        weekStart.getUTCDate() + 6,
+        23, 59, 59, 999,
+      ),
     );
 
     const activitiesInSameWeek = existingActivities.filter((activity) => {
-      const actDate = new Date(activity.activityDate);
-      const actDateStr = actDate.toISOString().split('T')[0];
-      const [actYear, actMonth, actDay] = actDateStr.split('-').map(Number);
-      const actDateNormalized = new Date(
-        Date.UTC(actYear, actMonth - 1, actDay, 12, 0, 0, 0),
-      );
-      return actDateNormalized >= weekStart && actDateNormalized <= weekEnd;
+      const actDateStr = new Date(activity.activityDate)
+        .toISOString()
+        .split('T')[0];
+      const [y, m, d] = actDateStr.split('-').map(Number);
+      const normalized = new Date(Date.UTC(y, m - 1, d, 12, 0, 0, 0));
+      return normalized >= weekStart && normalized <= weekEnd;
     });
 
     const weeklyHours = activitiesInSameWeek.reduce(
-      (sum, activity) => sum + (activity.hours || 0),
+      (sum, a) => sum + (a.hours || 0),
       0,
     );
 
@@ -399,7 +330,7 @@ export class PracticeProfessionalService {
     }
 
     const activity = new this.practiceActivityModel({
-      applicationId: acceptedApplication._id,
+      practiceProfessionalId: practice._id,
       description: createActivityDto.description,
       activityDate: new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0)),
       hours: createActivityDto.hours,
@@ -408,34 +339,15 @@ export class PracticeProfessionalService {
     });
 
     const savedActivity = await activity.save();
-
-    return {
-      _id: savedActivity._id.toString(),
-      applicationId: savedActivity.applicationId.toString(),
-      description: savedActivity.description,
-      activityDate: savedActivity.activityDate,
-      hours: savedActivity.hours,
-      equipmentOrTool: savedActivity.equipmentOrTool,
-      status: savedActivity.status,
-      rejectionReason: savedActivity.rejectionReason,
-      createdAt: savedActivity.createdAt,
-      updatedAt: savedActivity.updatedAt,
-    };
+    return this.mapActivityToDto(savedActivity);
   }
 
-  async getActivities(
-    userId: string,
-    page = 1,
-    limit = 20,
-  ) {
-    const acceptedApplication = await this.applicationModel
-      .findOne({
-        studentId: new Types.ObjectId(userId),
-        status: ApplicationStatus.ACCEPTED,
-      })
+  async getActivities(userId: string, page = 1, limit = 20) {
+    const practice = await this.practiceProfessionalModel
+      .findOne({ studentId: new Types.ObjectId(userId), finalizedAt: null })
       .exec();
 
-    if (!acceptedApplication) {
+    if (!practice) {
       throw new NotFoundException(
         'No tienes una práctica profesional activa',
       );
@@ -445,51 +357,18 @@ export class PracticeProfessionalService {
 
     const [activities, total] = await Promise.all([
       this.practiceActivityModel
-        .find({
-          applicationId: acceptedApplication._id,
-        })
+        .find({ practiceProfessionalId: practice._id })
         .sort({ activityDate: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean()
         .exec(),
       this.practiceActivityModel
-        .countDocuments({
-          applicationId: acceptedApplication._id,
-        })
+        .countDocuments({ practiceProfessionalId: practice._id })
         .exec(),
     ]);
 
-    const data = activities.map((activity) => {
-      const activityObj = activity as unknown as {
-        _id: Types.ObjectId;
-        applicationId: Types.ObjectId;
-        description: string;
-        activityDate: Date;
-        hours: number;
-        equipmentOrTool: string;
-        status: ActivityStatus;
-        rejectionReason?: string;
-        createdAt: Date;
-        updatedAt: Date;
-      };
-
-      return {
-        _id: activityObj._id.toString(),
-        applicationId: activityObj.applicationId.toString(),
-        description: activityObj.description,
-        activityDate: activityObj.activityDate,
-        hours: activityObj.hours,
-        equipmentOrTool: activityObj.equipmentOrTool,
-        status: activityObj.status,
-        rejectionReason: activityObj.rejectionReason,
-        createdAt: activityObj.createdAt,
-        updatedAt: activityObj.updatedAt,
-      };
-    });
-
     return {
-      data,
+      data: activities.map((a) => this.mapActivityToDto(a)),
       total,
       page,
       limit,
@@ -503,177 +382,56 @@ export class PracticeProfessionalService {
     page = 1,
     limit = 20,
   ): Promise<ActivitiesResponseDto> {
-    // First, try to find the student to get their userId
-    let studentUserId: Types.ObjectId | null = null;
+    const studentUserId = await this.resolveStudentUserId(studentId);
 
-    // Try to find by student _id first
-    const student = await this.studentModel
-      .findById(studentId)
-      .select('userId')
-      .lean()
-      .exec();
-
-    if (student && student.userId) {
-      // Convert userId to ObjectId if it's a string
-      const userIdValue = student.userId;
-      if (userIdValue instanceof Types.ObjectId) {
-        studentUserId = userIdValue;
-      } else {
-        studentUserId = new Types.ObjectId(String(userIdValue));
-      }
-    } else {
-      // If not found, assume studentId is the userId
-      try {
-        studentUserId = new Types.ObjectId(studentId);
-      } catch {
-        throw new NotFoundException('Estudiante no encontrado');
-      }
-    }
-
-    // Find accepted application for the student using userId
-    const acceptedApplication = await this.applicationModel
-      .findOne({
-        studentId: studentUserId,
-        status: ApplicationStatus.ACCEPTED,
-      })
+    const practice = await this.practiceProfessionalModel
+      .findOne({ studentId: studentUserId, finalizedAt: null })
       .populate({
-        path: 'opportunityId',
-        select: 'companyId responsibleUserId',
+        path: 'opportunity',
+        select: 'companyId responsibleUserId title description activities',
       })
-      .lean()
       .exec();
 
-    if (!acceptedApplication) {
+    if (!practice) {
       throw new NotFoundException(
         'El estudiante no tiene una práctica profesional activa',
       );
     }
 
-    const opportunity = acceptedApplication.opportunityId as unknown as {
-      companyId: Types.ObjectId | string | { _id: Types.ObjectId | string };
-      responsibleUserId?: Types.ObjectId | string;
-    };
-
-    // Verify that the company user has access to this opportunity
-    // Handle companyId - it can be ObjectId, string, or populated object
-    let opportunityCompanyId: string;
-    if (typeof opportunity.companyId === 'object' && opportunity.companyId !== null && !(opportunity.companyId instanceof Types.ObjectId)) {
-      // It's a populated object
-      if ('_id' in opportunity.companyId) {
-        opportunityCompanyId = opportunity.companyId._id.toString();
-      } else {
-        opportunityCompanyId = String(opportunity.companyId);
-      }
-    } else if (opportunity.companyId instanceof Types.ObjectId) {
-      // It's an ObjectId
-      opportunityCompanyId = opportunity.companyId.toString();
-    } else {
-      // It's a string
-      opportunityCompanyId = opportunity.companyId?.toString() || String(opportunity.companyId);
-    }
-
-    const responsibleUserId = opportunity.responsibleUserId?.toString() || opportunity.responsibleUserId?.toString();
-    const userCompanyId = await this.getCompanyIdByUserId(companyUserId);
-
-    // Convert both to strings for comparison
-    const opportunityCompanyIdStr = String(opportunityCompanyId);
-    const userCompanyIdStr = String(userCompanyId);
-    const responsibleUserIdStr = responsibleUserId ? String(responsibleUserId) : null;
-    const companyUserIdStr = String(companyUserId);
-
-    if (
-      opportunityCompanyIdStr !== userCompanyIdStr &&
-      (!responsibleUserIdStr || responsibleUserIdStr !== companyUserIdStr)
-    ) {
-      throw new BadRequestException(
-        'No tienes permiso para ver las actividades de este estudiante',
-      );
-    }
+    const opportunity = practice.opportunity!;
+    await this.verifyCompanyAccess(opportunity, companyUserId);
 
     const skip = (page - 1) * limit;
 
-    // Get opportunity details for evaluation
-    const opportunityId =
-      acceptedApplication.opportunityId instanceof Types.ObjectId
-        ? acceptedApplication.opportunityId
-        : new Types.ObjectId(
-            String((acceptedApplication.opportunityId as unknown as { _id?: Types.ObjectId })._id || acceptedApplication.opportunityId),
-          );
-
-    const opportunityFull = await this.opportunityModel
-      .findById(opportunityId)
-      .select('title description activities')
-      .lean()
-      .exec();
-
     const [activities, total] = await Promise.all([
       this.practiceActivityModel
-        .find({
-          applicationId: acceptedApplication._id,
-        })
+        .find({ practiceProfessionalId: practice._id })
         .sort({ activityDate: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean()
         .exec(),
       this.practiceActivityModel
-        .countDocuments({
-          applicationId: acceptedApplication._id,
-        })
+        .countDocuments({ practiceProfessionalId: practice._id })
         .exec(),
     ]);
 
-    // Evaluate activities that are pending approval
     const data = await Promise.all(
       activities.map(async (activity) => {
-        const activityObj = activity as unknown as {
-          _id: Types.ObjectId;
-          applicationId: Types.ObjectId;
-          description: string;
-          activityDate: Date;
-          hours: number;
-          equipmentOrTool: string;
-          status: ActivityStatus;
-          rejectionReason?: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
+        const evaluation =
+          activity.status === ActivityStatus.PENDING_APPROVAL
+            ? await this.evaluateActivityRelevance(
+                activity.description,
+                opportunity.title || '',
+                opportunity.description || '',
+                opportunity.activities || '',
+              )
+            : undefined;
 
-        let evaluation: { type: 'warning' | 'approval'; message: string } | undefined;
-
-        // Only evaluate if activity is pending approval
-        if (activityObj.status === ActivityStatus.PENDING_APPROVAL && opportunityFull) {
-          evaluation = await this.evaluateActivityRelevance(
-            activityObj.description,
-            opportunityFull.title || '',
-            opportunityFull.description || '',
-            opportunityFull.activities || '',
-          );
-        }
-
-        return {
-          _id: activityObj._id.toString(),
-          applicationId: activityObj.applicationId.toString(),
-          description: activityObj.description,
-          activityDate: activityObj.activityDate,
-          hours: activityObj.hours,
-          equipmentOrTool: activityObj.equipmentOrTool,
-          status: activityObj.status,
-          rejectionReason: activityObj.rejectionReason,
-          evaluation,
-          createdAt: activityObj.createdAt,
-          updatedAt: activityObj.updatedAt,
-        };
+        return this.mapActivityToDto(activity, evaluation);
       }),
     );
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   private async evaluateActivityRelevance(
@@ -686,7 +444,8 @@ export class PracticeProfessionalService {
     if (!apiKey) {
       return {
         type: 'approval',
-        message: 'La actividad reportada está alineada con los objetivos y requerimientos de la oportunidad de práctica profesional.',
+        message:
+          'La actividad reportada está alineada con los objetivos y requerimientos de la oportunidad de práctica profesional.',
       };
     }
 
@@ -728,10 +487,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
             content:
               'Eres un experto en evaluación de actividades de práctica profesional. Evalúa objetivamente si las actividades reportadas están relacionadas con las oportunidades de práctica. Responde solo con JSON válido.',
           },
-          {
-            role: 'user',
-            content: prompt,
-          },
+          { role: 'user', content: prompt },
         ],
         temperature: 0.3,
         max_tokens: 200,
@@ -741,18 +497,15 @@ No incluyas ningún texto adicional, solo el JSON.`;
       if (!content) {
         return {
           type: 'approval',
-          message: 'La actividad reportada está alineada con los objetivos y requerimientos de la oportunidad de práctica profesional.',
+          message:
+            'La actividad reportada está alineada con los objetivos y requerimientos de la oportunidad de práctica profesional.',
         };
       }
 
-      // Intentar parsear el JSON
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const evaluation = JSON.parse(jsonMatch[0]);
-        if (
-          evaluation.type === 'warning' ||
-          evaluation.type === 'approval'
-        ) {
+        if (evaluation.type === 'warning' || evaluation.type === 'approval') {
           return {
             type: evaluation.type,
             message:
@@ -764,15 +517,13 @@ No incluyas ningún texto adicional, solo el JSON.`;
         }
       }
 
-      // Si no se pudo parsear correctamente, hacer una evaluación simple basada en palabras clave
       const activityLower = activityDescription.toLowerCase();
-      const opportunityText = `${opportunityTitle} ${opportunityDescription} ${opportunityActivities}`.toLowerCase();
-      
-      // Buscar palabras clave comunes
+      const opportunityText =
+        `${opportunityTitle} ${opportunityDescription} ${opportunityActivities}`.toLowerCase();
       const commonWords = activityLower
         .split(/\s+/)
-        .filter((word) => word.length > 3)
-        .some((word) => opportunityText.includes(word));
+        .filter((w) => w.length > 3)
+        .some((w) => opportunityText.includes(w));
 
       return {
         type: commonWords ? 'approval' : 'warning',
@@ -784,7 +535,8 @@ No incluyas ningún texto adicional, solo el JSON.`;
       console.error('Error evaluando actividad con OpenAI:', error);
       return {
         type: 'approval',
-        message: 'La actividad reportada está alineada con los objetivos y requerimientos de la oportunidad de práctica profesional.',
+        message:
+          'La actividad reportada está alineada con los objetivos y requerimientos de la oportunidad de práctica profesional.',
       };
     }
   }
@@ -796,68 +548,26 @@ No incluyas ningún texto adicional, solo el JSON.`;
   ): Promise<ActivityResponseDto> {
     const activity = await this.practiceActivityModel
       .findById(activityId)
-      .populate({
-        path: 'applicationId',
-        populate: {
-          path: 'opportunityId',
-          select: 'companyId responsibleUserId',
-        },
-      })
       .exec();
 
     if (!activity) {
       throw new NotFoundException('Actividad no encontrada');
     }
 
-    const application = activity.applicationId as unknown as {
-      opportunityId: {
-        companyId: Types.ObjectId;
-        responsibleUserId?: Types.ObjectId;
-      };
-    };
+    const practice = await this.practiceProfessionalModel
+      .findById(activity.practiceProfessionalId)
+      .populate({
+        path: 'opportunity',
+        select: 'companyId responsibleUserId',
+      })
+      .exec();
 
-    const opportunity = application.opportunityId as unknown as {
-      companyId: Types.ObjectId | string | { _id: Types.ObjectId | string };
-      responsibleUserId?: Types.ObjectId | string;
-    };
-
-    // Verify that the company user has access to this activity
-    // Handle companyId - it can be ObjectId, string, or populated object
-    let opportunityCompanyId: string;
-    if (typeof opportunity.companyId === 'object' && opportunity.companyId !== null && !(opportunity.companyId instanceof Types.ObjectId)) {
-      // It's a populated object
-      if ('_id' in opportunity.companyId) {
-        opportunityCompanyId = opportunity.companyId._id.toString();
-      } else {
-        opportunityCompanyId = String(opportunity.companyId);
-      }
-    } else if (opportunity.companyId instanceof Types.ObjectId) {
-      // It's an ObjectId
-      opportunityCompanyId = opportunity.companyId.toString();
-    } else {
-      // It's a string
-      opportunityCompanyId = opportunity.companyId?.toString() || String(opportunity.companyId);
+    if (!practice) {
+      throw new NotFoundException('Práctica profesional no encontrada');
     }
 
-    const responsibleUserId = opportunity.responsibleUserId?.toString() || opportunity.responsibleUserId?.toString();
-    const userCompanyId = await this.getCompanyIdByUserId(companyUserId);
+    await this.verifyCompanyAccess(practice.opportunity!, companyUserId);
 
-    // Convert both to strings for comparison
-    const opportunityCompanyIdStr = String(opportunityCompanyId);
-    const userCompanyIdStr = String(userCompanyId);
-    const responsibleUserIdStr = responsibleUserId ? String(responsibleUserId) : null;
-    const companyUserIdStr = String(companyUserId);
-
-    if (
-      opportunityCompanyIdStr !== userCompanyIdStr &&
-      (!responsibleUserIdStr || responsibleUserIdStr !== companyUserIdStr)
-    ) {
-      throw new BadRequestException(
-        'No tienes permiso para modificar esta actividad',
-      );
-    }
-
-    // Validate rejection reason if status is rejected
     if (
       updateDto.status === ActivityStatus.REJECTED &&
       (!updateDto.rejectionReason || updateDto.rejectionReason.trim() === '')
@@ -867,9 +577,6 @@ No incluyas ningún texto adicional, solo el JSON.`;
       );
     }
 
-    // No evaluar aquí, la evaluación ya se hizo cuando se cargaron las actividades
-
-    // Update activity status
     activity.status = updateDto.status;
     if (updateDto.rejectionReason) {
       activity.rejectionReason = updateDto.rejectionReason;
@@ -878,123 +585,40 @@ No incluyas ningún texto adicional, solo el JSON.`;
     }
 
     const savedActivity = await activity.save();
-
-    return {
-      _id: savedActivity._id.toString(),
-      applicationId: savedActivity.applicationId.toString(),
-      description: savedActivity.description,
-      activityDate: savedActivity.activityDate,
-      hours: savedActivity.hours,
-      equipmentOrTool: savedActivity.equipmentOrTool,
-      status: savedActivity.status,
-      rejectionReason: savedActivity.rejectionReason,
-      createdAt: savedActivity.createdAt,
-      updatedAt: savedActivity.updatedAt,
-    };
+    return this.mapActivityToDto(savedActivity);
   }
 
   async getStudentDetailForCompany(
     studentId: string,
     companyUserId: string,
   ) {
-    // First, try to find the student to get their userId
-    // studentId can be either the student _id or the userId
-    let studentUserId: Types.ObjectId | null = null;
+    const studentUserId = await this.resolveStudentUserId(studentId);
 
-    // Try to find by student _id first
-    const student = await this.studentModel
-      .findById(studentId)
-      .select('userId')
-      .lean()
-      .exec();
-
-    if (student && student.userId) {
-      // Convert userId to ObjectId if it's a string
-      const userIdValue = student.userId;
-      if (userIdValue instanceof Types.ObjectId) {
-        studentUserId = userIdValue;
-      } else {
-        studentUserId = new Types.ObjectId(String(userIdValue));
-      }
-    } else {
-      // If not found, assume studentId is the userId
-      try {
-        studentUserId = new Types.ObjectId(studentId);
-      } catch {
-        throw new NotFoundException('Estudiante no encontrado');
-      }
-    }
-
-    // Find accepted application using the userId
-    const acceptedApplication = await this.applicationModel
-      .findOne({
-        studentId: studentUserId,
-        status: ApplicationStatus.ACCEPTED,
-      })
+    const practice = await this.practiceProfessionalModel
+      .findOne({ studentId: studentUserId, finalizedAt: null })
       .populate({
-        path: 'opportunityId',
+        path: 'opportunity',
         populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
         ],
       })
-      .lean()
+      .populate('application')
       .exec();
 
-    if (!acceptedApplication) {
+    if (!practice) {
       throw new NotFoundException(
         'El estudiante no tiene una práctica profesional activa',
       );
     }
 
-    const opportunity = acceptedApplication.opportunityId as unknown as {
-      companyId: Types.ObjectId | string | { _id: Types.ObjectId | string };
-      responsibleUserId?: Types.ObjectId | string;
-    };
+    await this.verifyCompanyAccess(practice.opportunity!, companyUserId);
 
-    // Verify that the company user has access to this student
-    // Handle companyId - it can be ObjectId, string, or populated object
-    let opportunityCompanyId: string;
-    if (typeof opportunity.companyId === 'object' && opportunity.companyId !== null && !(opportunity.companyId instanceof Types.ObjectId)) {
-      // It's a populated object
-      if ('_id' in opportunity.companyId) {
-        opportunityCompanyId = opportunity.companyId._id.toString();
-      } else {
-        opportunityCompanyId = String(opportunity.companyId);
-      }
-    } else if (opportunity.companyId instanceof Types.ObjectId) {
-      // It's an ObjectId
-      opportunityCompanyId = opportunity.companyId.toString();
-    } else {
-      // It's a string
-      opportunityCompanyId = opportunity.companyId?.toString() || String(opportunity.companyId);
-    }
-
-    const responsibleUserId = opportunity.responsibleUserId?.toString() || opportunity.responsibleUserId?.toString();
-    const userCompanyId = await this.getCompanyIdByUserId(companyUserId);
-
-    // Convert both to strings for comparison
-    const opportunityCompanyIdStr = String(opportunityCompanyId);
-    const userCompanyIdStr = String(userCompanyId);
-    const responsibleUserIdStr = responsibleUserId ? String(responsibleUserId) : null;
-    const companyUserIdStr = String(companyUserId);
-
-    if (
-      opportunityCompanyIdStr !== userCompanyIdStr &&
-      (!responsibleUserIdStr || responsibleUserIdStr !== companyUserIdStr)
-    ) {
-      throw new BadRequestException(
-        'No tienes permiso para ver la información de este estudiante',
-      );
-    }
-
-    // Get student using StudentsService (it handles both _id and userId)
     const transformedStudent = await this.studentsService.findOne(studentId);
 
-    // Get all approved activities to calculate approved hours
     const approvedActivities = await this.practiceActivityModel
       .find({
-        applicationId: acceptedApplication._id,
+        practiceProfessionalId: practice._id,
         status: ActivityStatus.APPROVED,
       })
       .select('hours')
@@ -1002,14 +626,14 @@ No incluyas ningún texto adicional, solo el JSON.`;
       .exec();
 
     const approvedHours = approvedActivities.reduce(
-      (sum, activity) => sum + (activity.hours || 0),
+      (sum, a) => sum + (a.hours || 0),
       0,
     );
 
     return {
       student: transformedStudent,
-      application: acceptedApplication,
-      opportunity: acceptedApplication.opportunityId,
+      application: practice.application,
+      opportunity: practice.opportunity,
       approvedHours,
     };
   }
@@ -1028,111 +652,32 @@ No incluyas ningún texto adicional, solo el JSON.`;
       };
     },
   ): Promise<{ message: string }> {
-    let studentUserId: Types.ObjectId | null = null;
+    const studentUserId = await this.resolveStudentUserId(studentId);
 
-    const student = await this.studentModel
-      .findById(studentId)
-      .select('userId')
-      .lean()
+    const practice = await this.practiceProfessionalModel
+      .findOne({ studentId: studentUserId, finalizedAt: null })
+      .populate({ path: 'opportunity', select: 'companyId totalHours' })
       .exec();
 
-    if (student && student.userId) {
-      const userIdValue = student.userId;
-      if (userIdValue instanceof Types.ObjectId) {
-        studentUserId = userIdValue;
-      } else {
-        studentUserId = new Types.ObjectId(String(userIdValue));
-      }
-    } else {
-      try {
-        studentUserId = new Types.ObjectId(studentId);
-      } catch {
-        throw new NotFoundException('Estudiante no encontrado');
-      }
-    }
-
-    const application = await this.applicationModel
-      .findOne({
-        studentId: studentUserId,
-        status: ApplicationStatus.ACCEPTED,
-      })
-      .populate({
-        path: 'opportunityId',
-        populate: {
-          path: 'companyId',
-          select: '_id',
-        },
-      })
-      .exec();
-
-    if (!application) {
+    if (!practice) {
       throw new NotFoundException(
         'El estudiante no tiene una práctica profesional activa',
       );
     }
 
-    if (application.finalizedAt) {
-      throw new BadRequestException(
-        'La práctica profesional ya está finalizada',
-      );
-    }
-
-    const opportunity = application.opportunityId as unknown as {
-      companyId: Types.ObjectId | string | { _id: Types.ObjectId | string };
-      totalHours?: number;
-    };
-
-    let opportunityCompanyId: string;
-    if (
-      typeof opportunity.companyId === 'object' &&
-      opportunity.companyId !== null &&
-      !(opportunity.companyId instanceof Types.ObjectId)
-    ) {
-      if ('_id' in opportunity.companyId) {
-        opportunityCompanyId = opportunity.companyId._id.toString();
-      } else {
-        opportunityCompanyId = String(opportunity.companyId);
-      }
-    } else if (opportunity.companyId instanceof Types.ObjectId) {
-      opportunityCompanyId = opportunity.companyId.toString();
-    } else {
-      opportunityCompanyId =
-        opportunity.companyId?.toString() || String(opportunity.companyId);
-    }
-
+    const opportunity = practice.opportunity!;
+    const opportunityCompanyId = opportunity.companyId.toString();
     const userCompanyId = await this.getCompanyIdByUserId(companyUserId);
 
-    const opportunityCompanyIdStr = String(opportunityCompanyId);
-    const userCompanyIdStr = String(userCompanyId);
-
-    if (opportunityCompanyIdStr !== userCompanyIdStr) {
+    if (opportunityCompanyId !== userCompanyId) {
       throw new BadRequestException(
         'No tienes permiso para finalizar la práctica profesional de este estudiante',
       );
     }
 
-    // Get opportunity with totalHours
-    const opportunityId =
-      application.opportunityId instanceof Types.ObjectId
-        ? application.opportunityId
-        : new Types.ObjectId(
-            String((application.opportunityId as unknown as { _id?: Types.ObjectId })._id || application.opportunityId),
-          );
-
-    const opportunityFull = await this.opportunityModel
-      .findById(opportunityId)
-      .select('totalHours')
-      .lean()
-      .exec();
-
-    if (!opportunityFull) {
-      throw new NotFoundException('Oportunidad no encontrada');
-    }
-
-    // Get approved activities to calculate total approved hours
     const approvedActivities = await this.practiceActivityModel
       .find({
-        applicationId: application._id,
+        practiceProfessionalId: practice._id,
         status: ActivityStatus.APPROVED,
       })
       .select('hours')
@@ -1140,13 +685,12 @@ No incluyas ningún texto adicional, solo el JSON.`;
       .exec();
 
     const approvedHours = approvedActivities.reduce(
-      (sum, activity) => sum + (activity.hours || 0),
+      (sum, a) => sum + (a.hours || 0),
       0,
     );
 
-    const requiredHours = opportunityFull.totalHours || 0;
+    const requiredHours = opportunity.totalHours || 0;
 
-    // If approved hours are less than required hours, early termination reason is required
     if (approvedHours < requiredHours) {
       if (
         !finishDto.earlyTerminationReason ||
@@ -1156,132 +700,81 @@ No incluyas ningún texto adicional, solo el JSON.`;
           'Debes proporcionar un motivo para finalizar la práctica profesional antes de completar las horas requeridas.',
         );
       }
-      application.earlyTerminationReason = finishDto.earlyTerminationReason.trim();
+      practice.earlyTerminationReason =
+        finishDto.earlyTerminationReason.trim();
     }
 
-    // Save evaluation
-    application.practiceEvaluation = {
-      qualityAndOrganization: finishDto.evaluation.qualityAndOrganization,
-      knowledgeAndApplication: finishDto.evaluation.knowledgeAndApplication,
-      learningCapacity: finishDto.evaluation.learningCapacity,
-      attendanceAndPunctuality: finishDto.evaluation.attendanceAndPunctuality,
-      initiativeAndJudgment: finishDto.evaluation.initiativeAndJudgment,
-    };
+    practice.practiceEvaluation = { ...finishDto.evaluation };
+    practice.finalizedAt = new Date();
+    practice.status = PracticeStatus.FINALIZADA;
+    await practice.save();
 
-    application.finalizedAt = new Date();
-    await application.save();
-
-    return {
-      message: 'Práctica profesional finalizada exitosamente',
-    };
+    return { message: 'Práctica profesional finalizada exitosamente' };
   }
 
   async getPracticeHistory(userId: string): Promise<PracticeHistoryResponseDto> {
-    const applications = await this.applicationModel
-      .find({
-        studentId: new Types.ObjectId(userId),
-        status: ApplicationStatus.ACCEPTED,
-      })
+    const practices = await this.practiceProfessionalModel
+      .find({ studentId: new Types.ObjectId(userId) })
       .populate({
-        path: 'opportunityId',
+        path: 'opportunity',
         populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
         ],
       })
       .sort({ createdAt: -1 })
-      .lean()
       .exec();
 
     const historyItems: PracticeHistoryItemDto[] = await Promise.all(
-      applications.map(async (application) => {
-        const appObj = application as unknown as {
-          _id: Types.ObjectId;
-          opportunityId: unknown;
-          finalizedAt?: Date;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-
-        const opportunity = appObj.opportunityId as unknown as {
-          _id: Types.ObjectId | string;
-          title: string;
-          totalHours?: number;
-          companyId?: {
-            _id: Types.ObjectId | string;
-            name: string;
-            logo?: string;
-          };
-        };
+      practices.map(async (practice) => {
+        const opportunity = practice.opportunity!;
 
         const activities = await this.practiceActivityModel
-          .find({
-            applicationId: appObj._id,
-          })
+          .find({ practiceProfessionalId: practice._id })
           .sort({ activityDate: 1 })
           .lean()
           .exec();
 
         const totalHours = activities.reduce(
-          (sum, activity) => sum + (activity.hours || 0),
+          (sum, a) => sum + (a.hours || 0),
           0,
         );
-
         const approvedHours = activities
-          .filter((activity) => activity.status === ActivityStatus.APPROVED)
-          .reduce((sum, activity) => sum + (activity.hours || 0), 0);
+          .filter((a) => a.status === ActivityStatus.APPROVED)
+          .reduce((sum, a) => sum + (a.hours || 0), 0);
 
-        const requiredHours = opportunity?.totalHours || 0;
-
-        const startDate = appObj.createdAt;
+        const requiredHours = opportunity.totalHours || 0;
 
         let endDate: Date | undefined;
         let status: PracticeStatus;
 
-        if (appObj.finalizedAt) {
+        if (practice.finalizedAt) {
           status = PracticeStatus.FINALIZADA;
-          endDate = appObj.finalizedAt;
+          endDate = practice.finalizedAt;
         } else if (approvedHours >= requiredHours && requiredHours > 0) {
           status = PracticeStatus.FINALIZADA;
-          if (activities.length > 0) {
-            const lastApprovedActivity = activities
-              .filter((activity) => activity.status === ActivityStatus.APPROVED)
-              .sort(
-                (a, b) =>
-                  new Date(b.activityDate).getTime() -
-                  new Date(a.activityDate).getTime(),
-              )[0];
-            if (lastApprovedActivity) {
-              endDate = new Date(lastApprovedActivity.activityDate);
-            }
-          }
+          const lastApproved = activities
+            .filter((a) => a.status === ActivityStatus.APPROVED)
+            .sort(
+              (a, b) =>
+                new Date(b.activityDate).getTime() -
+                new Date(a.activityDate).getTime(),
+            )[0];
+          if (lastApproved) endDate = new Date(lastApproved.activityDate);
         } else {
           status = PracticeStatus.EN_CURSO;
         }
 
-        const companyIdValue = opportunity?.companyId;
-        let companyName = 'Empresa no especificada';
-        let companyLogo: string | undefined;
-
-        if (
-          companyIdValue &&
-          typeof companyIdValue === 'object' &&
-          'name' in companyIdValue
-        ) {
-          companyName = companyIdValue.name || companyName;
-          companyLogo = companyIdValue.logo;
-        }
+        const companyName = opportunity.company?.name ?? 'Empresa no especificada';
+        const companyLogo = opportunity.company?.logo;
 
         return {
-          applicationId: appObj._id.toString(),
-          opportunityId:
-            typeof opportunity._id === 'string'
-              ? opportunity._id
-              : opportunity._id.toString(),
+          applicationId: practice.applicationId.toString(),
+          opportunityId: opportunity._id.toString(),
           opportunityTitle: opportunity.title || 'Sin título',
           companyName,
           companyLogo,
-          startDate,
+          startDate: practice.startDate,
           endDate,
           totalHours,
           approvedHours,
@@ -1291,232 +784,66 @@ No incluyas ningún texto adicional, solo el JSON.`;
       }),
     );
 
-    return {
-      data: historyItems,
-      total: historyItems.length,
-    };
+    return { data: historyItems, total: historyItems.length };
   }
 
   async getPracticeProfessionalByApplicationId(
     applicationId: string,
     userId: string,
   ): Promise<PracticeProfessionalResponseDto> {
-    const application = await this.applicationModel
+    const practice = await this.practiceProfessionalModel
       .findOne({
-        _id: new Types.ObjectId(applicationId),
+        applicationId: new Types.ObjectId(applicationId),
         studentId: new Types.ObjectId(userId),
-        status: ApplicationStatus.ACCEPTED,
       })
       .populate({
-        path: 'opportunityId',
+        path: 'opportunity',
         populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
         ],
       })
-      .lean()
+      .populate('application')
       .exec();
 
-    if (!application) {
+    if (!practice) {
       throw new NotFoundException(
         'Práctica profesional no encontrada o no tienes acceso a ella',
       );
     }
 
+    const opportunity = practice.opportunity!;
+    const application = practice.application!;
+
     const activities = await this.practiceActivityModel
-      .find({
-        applicationId: new Types.ObjectId(applicationId),
-      })
+      .find({ practiceProfessionalId: practice._id })
       .sort({ activityDate: -1, createdAt: -1 })
-      .lean()
       .exec();
 
     const totalHours = activities.reduce(
-      (sum, activity) => sum + (activity.hours || 0),
+      (sum, a) => sum + (a.hours || 0),
       0,
     );
-
     const approvedHours = activities
-      .filter((activity) => activity.status === ActivityStatus.APPROVED)
-      .reduce((sum, activity) => sum + (activity.hours || 0), 0);
-
-    const applicationObj = application as unknown as {
-      _id: Types.ObjectId;
-      opportunityId: unknown;
-      studentId: Types.ObjectId;
-      coverLetter?: string;
-      status: string;
-      rejectionReason?: string;
-      finalizedAt?: Date;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-
-    const opportunityIdValue = applicationObj.opportunityId;
-    let opportunity: any = null;
-
-    if (opportunityIdValue) {
-      if (
-        typeof opportunityIdValue === 'object' &&
-        opportunityIdValue !== null &&
-        '_id' in opportunityIdValue
-      ) {
-        opportunity = opportunityIdValue;
-      } else {
-        opportunity = await this.opportunityModel
-          .findById(opportunityIdValue)
-          .populate('careerId', 'name code')
-          .populate('companyId', 'name logo')
-          .lean()
-          .exec();
-      }
-    }
-
-    if (!opportunity) {
-      throw new NotFoundException('Oportunidad no encontrada');
-    }
-
-    const activitiesResponse: ActivityResponseDto[] = activities.map(
-      (activity) => {
-        const activityObj = activity as unknown as {
-          _id: Types.ObjectId;
-          applicationId: Types.ObjectId;
-          description: string;
-          activityDate: Date;
-          hours: number;
-          equipmentOrTool: string;
-          status: ActivityStatus;
-          rejectionReason?: string;
-          createdAt: Date;
-          updatedAt: Date;
-        };
-
-        return {
-          _id: activityObj._id.toString(),
-          applicationId: activityObj.applicationId.toString(),
-          description: activityObj.description,
-          activityDate: activityObj.activityDate,
-          hours: activityObj.hours,
-          equipmentOrTool: activityObj.equipmentOrTool,
-          status: activityObj.status,
-          rejectionReason: activityObj.rejectionReason,
-          createdAt: activityObj.createdAt,
-          updatedAt: activityObj.updatedAt,
-        };
-      },
-    );
+      .filter((a) => a.status === ActivityStatus.APPROVED)
+      .reduce((sum, a) => sum + (a.hours || 0), 0);
 
     return {
       application: {
-        _id: applicationObj._id.toString(),
-        opportunityId:
-          typeof opportunity._id === 'string'
-            ? opportunity._id
-            : opportunity._id.toString(),
-        studentId: applicationObj.studentId.toString(),
-        coverLetter: applicationObj.coverLetter,
-        status: applicationObj.status as ApplicationStatus,
-        rejectionReason: applicationObj.rejectionReason,
-        finalizedAt: applicationObj.finalizedAt,
-        createdAt: applicationObj.createdAt,
-        updatedAt: applicationObj.updatedAt,
+        _id: application._id.toString(),
+        opportunityId: practice.opportunityId.toString(),
+        studentId: application.studentId.toString(),
+        coverLetter: application.coverLetter,
+        status: application.status,
+        rejectionReason: application.rejectionReason,
+        createdAt: application.createdAt,
+        updatedAt: application.updatedAt,
       },
-      opportunity: {
-        _id:
-          typeof opportunity._id === 'string'
-            ? opportunity._id
-            : opportunity._id.toString(),
-        title: opportunity.title,
-        description: opportunity.description,
-        activities: opportunity.activities,
-        careerId:
-          typeof opportunity.careerId === 'object' &&
-          opportunity.careerId !== null &&
-          '_id' in opportunity.careerId
-            ? typeof (opportunity.careerId as { _id: unknown })._id === 'string'
-              ? (opportunity.careerId as { _id: string })._id
-              : (opportunity.careerId as { _id: Types.ObjectId })._id.toString()
-            : typeof opportunity.careerId === 'string'
-              ? opportunity.careerId
-              : '',
-        companyId:
-          typeof opportunity.companyId === 'object' &&
-          opportunity.companyId !== null &&
-          '_id' in opportunity.companyId
-            ? typeof (opportunity.companyId as { _id: unknown })._id === 'string'
-              ? (opportunity.companyId as { _id: string })._id
-              : (opportunity.companyId as { _id: Types.ObjectId })._id.toString()
-            : typeof opportunity.companyId === 'string'
-              ? opportunity.companyId
-              : '',
-        responsibleUserId: opportunity.responsibleUserId
-          ? typeof opportunity.responsibleUserId === 'string'
-            ? opportunity.responsibleUserId
-            : opportunity.responsibleUserId.toString()
-          : undefined,
-        totalHours: opportunity.totalHours,
-        availablePositions: opportunity.availablePositions,
-        modality: opportunity.modality,
-        workType: opportunity.workType,
-        expirationDate: opportunity.expirationDate,
-        status: opportunity.status,
-        isActive: opportunity.isActive,
-        shareToken: opportunity.shareToken,
-        createdAt: opportunity.createdAt,
-        updatedAt: opportunity.updatedAt,
-        career:
-          opportunity.careerId &&
-          typeof opportunity.careerId === 'object' &&
-          opportunity.careerId !== null &&
-          !(opportunity.careerId instanceof Types.ObjectId) &&
-          '_id' in opportunity.careerId &&
-          'name' in opportunity.careerId
-            ? {
-                _id:
-                  typeof (opportunity.careerId as { _id: Types.ObjectId | string })
-                    ._id === 'string'
-                    ? (opportunity.careerId as { _id: string })._id
-                    : (
-                        opportunity.careerId as { _id: Types.ObjectId }
-                      )._id.toString(),
-                name:
-                  (opportunity.careerId as { name?: string }).name || '',
-                code:
-                  (opportunity.careerId as { code?: string }).code || '',
-              }
-            : undefined,
-        company:
-          opportunity.companyId &&
-          typeof opportunity.companyId === 'object' &&
-          opportunity.companyId !== null &&
-          !(opportunity.companyId instanceof Types.ObjectId) &&
-          '_id' in opportunity.companyId &&
-          'name' in opportunity.companyId
-            ? {
-                _id:
-                  typeof (
-                    opportunity.companyId as { _id: Types.ObjectId | string }
-                  )._id === 'string'
-                    ? (opportunity.companyId as { _id: string })._id
-                    : (
-                        opportunity.companyId as { _id: Types.ObjectId }
-                      )._id.toString(),
-                name:
-                  (opportunity.companyId as { name?: string }).name || '',
-                logo: (opportunity.companyId as { logo?: string }).logo,
-              }
-            : undefined,
-      },
-      activities: activitiesResponse,
+      opportunity: this.mapOpportunity(opportunity),
+      activities: activities.map((a) => this.mapActivityToDto(a)),
       totalHours,
       approvedHours,
-      status: applicationObj.finalizedAt
-        ? PracticeStatus.FINALIZADA
-        : approvedHours >= (opportunity?.totalHours || 0) &&
-            (opportunity?.totalHours || 0) > 0
-          ? PracticeStatus.FINALIZADA
-          : PracticeStatus.EN_CURSO,
+      status: practice.status,
     };
   }
 }
-

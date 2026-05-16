@@ -10,6 +10,10 @@ import {
   PracticeActivitySchema,
 } from './schemas/practice-activity.schema';
 import {
+  PracticeProfessional,
+  PracticeProfessionalSchema,
+} from './schemas/practice-professional.schema';
+import {
   Application,
   ApplicationSchema,
 } from '@/modules/opportunities/schemas/application.schema';
@@ -25,6 +29,7 @@ import { StudentsModule } from '@/modules/students/students.module';
   imports: [
     MongooseModule.forFeature([
       { name: PracticeActivity.name, schema: PracticeActivitySchema },
+      { name: PracticeProfessional.name, schema: PracticeProfessionalSchema },
       { name: Application.name, schema: ApplicationSchema },
       { name: Opportunity.name, schema: OpportunitySchema },
       { name: Student.name, schema: StudentSchema },

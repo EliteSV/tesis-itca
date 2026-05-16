@@ -35,6 +35,10 @@ import {
   ActivityStatus,
 } from '@/modules/practice-professional/schemas/practice-activity.schema';
 import {
+  PracticeProfessional,
+  PracticeProfessionalDocument,
+} from '@/modules/practice-professional/schemas/practice-professional.schema';
+import {
   Student,
   StudentDocument,
   StudentStatus,
@@ -54,6 +58,8 @@ export class DashboardService {
     private applicationModel: Model<ApplicationDocument>,
     @InjectModel(PracticeActivity.name)
     private practiceActivityModel: Model<PracticeActivityDocument>,
+    @InjectModel(PracticeProfessional.name)
+    private practiceProfessionalModel: Model<PracticeProfessionalDocument>,
     @InjectModel(Student.name)
     private studentModel: Model<StudentDocument>,
   ) {}
@@ -265,19 +271,6 @@ export class DashboardService {
       .distinct('opportunityId')
       .exec();
 
-    // Obtener TODAS las aplicaciones aceptadas para calcular estadísticas de práctica
-    const acceptedApplicationsList = await this.applicationModel
-      .find({
-        studentId,
-        status: ApplicationStatus.ACCEPTED,
-      })
-      .populate({
-        path: 'opportunityId',
-        select: 'totalHours',
-      })
-      .lean()
-      .exec();
-
     // Obtener estadísticas de aplicaciones del estudiante
     const [
       totalApplications,
@@ -310,7 +303,7 @@ export class DashboardService {
       }),
     ]);
 
-    // Calcular estadísticas de práctica profesional de TODAS las aplicaciones aceptadas
+    // Calcular estadísticas de práctica profesional desde la colección PracticeProfessional
     let practiceProfessional: {
       totalHours: number;
       approvedHours: number;
@@ -319,15 +312,17 @@ export class DashboardService {
       isFinalized: boolean;
     } | null = null;
 
-    if (acceptedApplicationsList && acceptedApplicationsList.length > 0) {
-      const applicationIds = acceptedApplicationsList.map(
-        (app) => app._id as Types.ObjectId,
-      );
+    const practicesList = await this.practiceProfessionalModel
+      .find({ studentId })
+      .populate({ path: 'opportunityId', select: 'totalHours' })
+      .lean()
+      .exec();
+
+    if (practicesList.length > 0) {
+      const practiceIds = practicesList.map((p) => p._id as Types.ObjectId);
 
       const allActivities = await this.practiceActivityModel
-        .find({
-          applicationId: { $in: applicationIds },
-        })
+        .find({ practiceProfessionalId: { $in: practiceIds } })
         .lean()
         .exec();
 
@@ -337,49 +332,38 @@ export class DashboardService {
       let allFinalized = true;
       let hasAnyInProgress = false;
 
-      for (const acceptedApplication of acceptedApplicationsList) {
-        const applicationObj = acceptedApplication as unknown as {
-          _id: Types.ObjectId;
-          finalizedAt?: Date;
-        };
-
-        const opportunity = acceptedApplication.opportunityId as unknown as {
+      for (const practice of practicesList) {
+        const opportunity = practice.opportunityId as unknown as {
           totalHours?: number;
         };
         const requiredHours = opportunity?.totalHours || 0;
         totalRequiredHours += requiredHours;
 
-        if (!applicationObj.finalizedAt) {
+        if (!practice.finalizedAt) {
           allFinalized = false;
           hasAnyInProgress = true;
         }
 
-        const applicationActivities = allActivities.filter(
+        const practiceActivities = allActivities.filter(
           (activity) =>
-            activity.applicationId &&
-            activity.applicationId.toString() ===
-              applicationObj._id.toString(),
+            activity.practiceProfessionalId &&
+            activity.practiceProfessionalId.toString() ===
+              (practice._id as Types.ObjectId).toString(),
         );
 
-        const appTotalHours = applicationActivities.reduce(
-          (sum, activity) => sum + (activity.hours || 0),
+        totalHours += practiceActivities.reduce(
+          (sum, a) => sum + (a.hours || 0),
           0,
         );
-
-        const appApprovedHours = applicationActivities
-          .filter((activity) => activity.status === ActivityStatus.APPROVED)
-          .reduce((sum, activity) => sum + (activity.hours || 0), 0);
-
-        totalHours += appTotalHours;
-        approvedHours += appApprovedHours;
+        approvedHours += practiceActivities
+          .filter((a) => a.status === ActivityStatus.APPROVED)
+          .reduce((sum, a) => sum + (a.hours || 0), 0);
       }
-
-      const remainingHours = Math.max(0, totalRequiredHours - approvedHours);
 
       practiceProfessional = {
         totalHours,
         approvedHours,
-        remainingHours,
+        remainingHours: Math.max(0, totalRequiredHours - approvedHours),
         requiredHours: totalRequiredHours,
         isFinalized: allFinalized && !hasAnyInProgress,
       };

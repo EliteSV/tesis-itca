@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import type { CareerDocument } from '@/modules/careers/schemas/career.schema';
+import type { CompanyDocument } from '@/modules/companies/schemas/company.schema';
 
 export type OpportunityDocument = Opportunity & Document;
 
@@ -19,7 +21,7 @@ export enum OpportunityWorkType {
   FULL_TIME = 'full-time',
 }
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } })
 export class Opportunity {
   @Prop({ required: true })
   title: string;
@@ -73,6 +75,10 @@ export class Opportunity {
   @Prop({ unique: true })
   shareToken?: string;
 
+  // Virtual fields — populated via .populate('career') / .populate('company')
+  career?: CareerDocument;
+  company?: CompanyDocument;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,3 +92,17 @@ OpportunitySchema.index({ isActive: 1 });
 OpportunitySchema.index({ shareToken: 1 });
 OpportunitySchema.index({ responsibleUserId: 1 });
 OpportunitySchema.index({ expirationDate: 1 });
+
+OpportunitySchema.virtual('career', {
+  ref: 'Career',
+  localField: 'careerId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+OpportunitySchema.virtual('company', {
+  ref: 'Company',
+  localField: 'companyId',
+  foreignField: '_id',
+  justOne: true,
+});

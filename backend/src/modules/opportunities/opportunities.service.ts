@@ -30,6 +30,10 @@ import {
 import { CreateOpportunityDto } from '@/modules/opportunities/dto/create-opportunity.dto';
 import { UpdateOpportunityDto } from '@/modules/opportunities/dto/update-opportunity.dto';
 import { UpdateApplicationStatusDto } from '@/modules/opportunities/dto/update-application-status.dto';
+import {
+  PracticeProfessional,
+  PracticeProfessionalDocument,
+} from '@/modules/practice-professional/schemas/practice-professional.schema';
 import OpenAI from 'openai';
 
 @Injectable()
@@ -70,6 +74,8 @@ export class OpportunitiesService {
     private savedOpportunityModel: Model<SavedOpportunityDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Student.name) private studentModel: Model<StudentDocument>,
+    @InjectModel(PracticeProfessional.name)
+    private practiceProfessionalModel: Model<PracticeProfessionalDocument>,
     private configService: ConfigService,
   ) {}
 
@@ -148,7 +154,7 @@ export class OpportunitiesService {
     const [data, total] = await Promise.all([
       this.opportunityModel
         .find(query)
-        .populate('careerId', 'name code')
+        .populate('career', 'name code')
         .populate('responsibleUserId', 'name email')
         .skip(skip)
         .limit(limit)
@@ -163,7 +169,7 @@ export class OpportunitiesService {
       const oppObj = opp.toObject();
       return {
         ...oppObj,
-        career: oppObj.careerId,
+        career: oppObj.career,
         responsibleUser: oppObj.responsibleUserId,
         shareLink: opp.shareToken
           ? `${frontendUrl}/opportunities/${opp.shareToken}`
@@ -215,8 +221,8 @@ export class OpportunitiesService {
     const [data, total] = await Promise.all([
       this.opportunityModel
         .find(query)
-        .populate('careerId', 'name code')
-        .populate('companyId', 'name logo nit')
+        .populate('career', 'name code')
+        .populate('company', 'name logo nit')
         .populate('responsibleUserId', 'name email')
         .skip(skip)
         .limit(limit)
@@ -256,8 +262,8 @@ export class OpportunitiesService {
       const applicationsCount = applicationsCountMap.get(opp._id.toString()) || 0;
       return {
         ...oppObj,
-        career: oppObj.careerId,
-        company: oppObj.companyId,
+        career: oppObj.career,
+        company: oppObj.company,
         responsibleUser: oppObj.responsibleUserId,
         applicationsCount,
         shareLink: opp.shareToken
@@ -287,9 +293,9 @@ export class OpportunitiesService {
 
     const opportunity = await this.opportunityModel
       .findOne(query)
-      .populate('careerId', 'name code')
+      .populate('career', 'name code')
       .populate(
-        'companyId',
+        'company',
         'name logo nit address phone email sector description status isActive',
       )
       .populate('responsibleUserId', 'name email')
@@ -304,8 +310,8 @@ export class OpportunitiesService {
     const opportunityObj = opportunity.toObject();
     return {
       ...opportunityObj,
-      career: opportunityObj.careerId,
-      company: opportunityObj.companyId,
+      career: opportunityObj.career,
+      company: opportunityObj.company,
       responsibleUser: opportunityObj.responsibleUserId,
       shareLink: opportunity.shareToken
         ? `${frontendUrl}/opportunities/${opportunity.shareToken}`
@@ -316,9 +322,9 @@ export class OpportunitiesService {
   async findOneForAdmin(id: string) {
     const opportunity = await this.opportunityModel
       .findOne({ _id: new Types.ObjectId(id) })
-      .populate('careerId', 'name code')
+      .populate('career', 'name code')
       .populate(
-        'companyId',
+        'company',
         'name logo nit address phone email sector description status isActive',
       )
       .populate('responsibleUserId', 'name email')
@@ -333,8 +339,8 @@ export class OpportunitiesService {
     const opportunityObj = opportunity.toObject();
     return {
       ...opportunityObj,
-      career: opportunityObj.careerId,
-      company: opportunityObj.companyId,
+      career: opportunityObj.career,
+      company: opportunityObj.company,
       responsibleUser: opportunityObj.responsibleUserId,
       shareLink: opportunity.shareToken
         ? `${frontendUrl}/opportunities/${opportunity.shareToken}`
@@ -345,8 +351,8 @@ export class OpportunitiesService {
   async findByShareToken(shareToken: string) {
     const opportunity = await this.opportunityModel
       .findOne({ shareToken, isActive: true, status: OpportunityStatus.ACTIVE })
-      .populate('careerId', 'name code')
-      .populate('companyId', 'name logo')
+      .populate('career', 'name code')
+      .populate('company', 'name logo')
       .populate('responsibleUserId', 'name email')
       .exec();
 
@@ -357,7 +363,7 @@ export class OpportunitiesService {
     const opportunityObj = opportunity.toObject();
     return {
       ...opportunityObj,
-      career: opportunityObj.careerId,
+      career: opportunityObj.career,
     };
   }
 
@@ -422,8 +428,8 @@ export class OpportunitiesService {
         new: true,
         runValidators: true,
       })
-      .populate('careerId', 'name code')
-      .populate('companyId', 'name logo')
+      .populate('career', 'name code')
+      .populate('company', 'name logo')
       .populate('responsibleUserId', 'name email')
       .exec();
 
@@ -436,7 +442,7 @@ export class OpportunitiesService {
     const opportunityObj = updatedOpportunity.toObject();
     return {
       ...opportunityObj,
-      career: opportunityObj.careerId,
+      career: opportunityObj.career,
       shareLink: updatedOpportunity.shareToken
         ? `${frontendUrl}/opportunities/${updatedOpportunity.shareToken}`
         : undefined,
@@ -606,7 +612,7 @@ export class OpportunitiesService {
       .findById(applicationId)
       .populate({
         path: 'opportunityId',
-        populate: { path: 'companyId' },
+        populate: { path: 'company' },
       })
       .exec();
 
@@ -689,7 +695,7 @@ export class OpportunitiesService {
       .findById(applicationId)
       .populate({
         path: 'opportunityId',
-        populate: { path: 'careerId' },
+        populate: { path: 'career' },
       })
       .exec();
 
@@ -789,6 +795,23 @@ export class OpportunitiesService {
       .populate('opportunityId')
       .exec();
 
+    const opportunityObjectId =
+      application.opportunityId instanceof Types.ObjectId
+        ? application.opportunityId
+        : new Types.ObjectId(
+            String(
+              (application.opportunityId as unknown as { _id: Types.ObjectId })
+                ._id ?? application.opportunityId,
+            ),
+          );
+
+    await this.practiceProfessionalModel.create({
+      applicationId: application._id,
+      studentId: application.studentId,
+      opportunityId: opportunityObjectId,
+      startDate: new Date(),
+    });
+
     // Rechazar automáticamente todas las demás aplicaciones pendientes y aprobadas del mismo estudiante
     await this.applicationModel.updateMany(
       {
@@ -877,7 +900,7 @@ export class OpportunitiesService {
 
     const opportunityPopulated = await this.opportunityModel
       .findById(opportunity._id)
-      .populate('careerId', 'name code')
+      .populate('career', 'name code')
       .lean()
       .exec();
 
@@ -908,7 +931,7 @@ export class OpportunitiesService {
       title: opportunityPopulated.title,
       description: opportunityPopulated.description || '',
       activities: opportunityPopulated.activities || '',
-      career: (opportunityPopulated.careerId as any)?.name || 'No especificada',
+      career: (opportunityPopulated as any).career?.name || 'No especificada',
       totalHours: opportunityPopulated.totalHours,
       modality: opportunityPopulated.modality,
       workType: opportunityPopulated.workType,
@@ -1016,8 +1039,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
     const updatedOpportunity = await this.opportunityModel
       .findById(opportunity._id)
-      .populate('careerId', 'name code')
-      .populate('companyId', 'name logo')
+      .populate('career', 'name code')
+      .populate('company', 'name logo')
       .populate('responsibleUserId', 'name email')
       .exec();
 
@@ -1030,7 +1053,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const opportunityObj = updatedOpportunity.toObject();
     return {
       ...opportunityObj,
-      career: opportunityObj.careerId,
+      career: opportunityObj.career,
       responsibleUser: opportunityObj.responsibleUserId,
       shareLink: updatedOpportunity.shareToken
         ? `${frontendUrl}/opportunities/${updatedOpportunity.shareToken}`
@@ -1179,7 +1202,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
       const opportunityPopulated = await this.opportunityModel
         .findById(opportunity._id)
-        .populate('careerId', 'name code')
+        .populate('career', 'name code')
         .lean()
         .exec();
 
@@ -1201,7 +1224,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         title: opportunityPopulated.title,
         description: opportunityPopulated.description || '',
         activities: opportunityPopulated.activities || '',
-        career: (opportunityPopulated.careerId as any)?.name || 'No especificada',
+        career: (opportunityPopulated as any).career?.name || 'No especificada',
         totalHours: opportunityPopulated.totalHours,
         modality: opportunityPopulated.modality,
         workType: opportunityPopulated.workType,
@@ -1342,9 +1365,9 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const [data, total] = await Promise.all([
       this.opportunityModel
         .find(query)
-        .populate('careerId', 'name code')
+        .populate('career', 'name code')
         .populate(
-          'companyId',
+          'company',
           'name logo nit address phone email sector description',
         )
         .populate('responsibleUserId', 'name email')
@@ -1368,7 +1391,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       data.map(async (opp) => {
         const oppObj = opp.toObject();
         const oppId = oppObj._id.toString();
-        
+
         // Siempre calcular el matchScore en tiempo real, nunca usar valores guardados
         let matchScore: number | null = null;
         if (student) {
@@ -1381,8 +1404,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
         return {
           ...oppObj,
-          career: oppObj.careerId,
-          company: oppObj.companyId,
+          career: oppObj.career,
+          company: oppObj.company,
           responsibleUser: oppObj.responsibleUserId,
           shareLink: opp.shareToken
             ? `${frontendUrl}/opportunities/${opp.shareToken}`
@@ -1425,7 +1448,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     // Verificar que la oportunidad existe y está disponible
     const opportunity = await this.opportunityModel
       .findById(opportunityId)
-      .populate('careerId')
+      .populate('career')
       .exec();
 
     if (!opportunity) {
@@ -1528,8 +1551,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       .populate({
         path: 'opportunityId',
         populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
         ],
       })
       .exec();
@@ -1634,9 +1657,9 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const [data, total] = await Promise.all([
       this.opportunityModel
         .find(opportunityQuery)
-        .populate('careerId', 'name code')
+        .populate('career', 'name code')
         .populate(
-          'companyId',
+          'company',
           'name logo nit address phone email sector description',
         )
         .populate('responsibleUserId', 'name email')
@@ -1653,8 +1676,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       const oppObj = opp.toObject();
       return {
         ...oppObj,
-        career: oppObj.careerId,
-        company: oppObj.companyId,
+        career: oppObj.career,
+        company: oppObj.company,
         responsibleUser: oppObj.responsibleUserId,
         shareLink: opp.shareToken
           ? `${frontendUrl}/opportunities/${opp.shareToken}`
@@ -1729,9 +1752,9 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       .populate({
         path: 'opportunityId',
         populate: [
-          { path: 'careerId', select: 'name code' },
+          { path: 'career', select: 'name code' },
           {
-            path: 'companyId',
+            path: 'company',
             select: 'name logo nit address phone email sector description',
           },
           { path: 'responsibleUserId', select: 'name email' },
@@ -1762,17 +1785,9 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           typeof description === 'string' &&
           description.toLowerCase().includes(searchLower);
 
-        const companyId = oppObj.companyId;
-        const companyName =
-          companyId &&
-          typeof companyId === 'object' &&
-          companyId !== null &&
-          'name' in companyId &&
-          typeof (companyId as { name: unknown }).name === 'string'
-            ? (companyId as { name: string }).name
-            : null;
+        const companyName = (oppObj as any).company?.name as string | undefined;
         const companyMatch =
-          companyName !== null &&
+          companyName != null &&
           companyName.toLowerCase().includes(searchLower);
         return titleMatch || descriptionMatch || companyMatch;
       });
@@ -1808,8 +1823,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         ? (oppDoc.toObject() as Record<string, unknown>)
         : (oppDoc as unknown as Record<string, unknown>);
       const oppTyped: {
-        companyId?: unknown;
-        careerId?: unknown;
+        company?: unknown;
+        career?: unknown;
         responsibleUserId?: unknown;
         shareToken?: string;
         [key: string]: unknown;
@@ -1817,14 +1832,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         ...oppObjRaw,
       };
 
-      const company =
-        oppTyped.companyId && typeof oppTyped.companyId === 'object'
-          ? (oppTyped.companyId as Record<string, unknown>)
-          : null;
-      const career =
-        oppTyped.careerId && typeof oppTyped.careerId === 'object'
-          ? (oppTyped.careerId as Record<string, unknown>)
-          : null;
+      const company = oppTyped.company ?? null;
+      const career = oppTyped.career ?? null;
       const responsibleUser =
         oppTyped.responsibleUserId &&
         typeof oppTyped.responsibleUserId === 'object'
@@ -1934,8 +1943,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         path: 'opportunityId',
         select: 'title',
         populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
         ],
       })
       .sort({ createdAt: -1 })
@@ -2077,8 +2086,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           const oppObj = opportunityIdValue as unknown as {
             _id: Types.ObjectId | string;
             title: string;
-            careerId?: { _id: Types.ObjectId | string; name: string; code: string };
-            companyId?: { _id: Types.ObjectId | string; name: string; logo?: string };
+            career?: { _id: Types.ObjectId | string; name: string; code: string };
+            company?: { _id: Types.ObjectId | string; name: string; logo?: string };
           };
           const oppIdString =
             typeof oppObj._id === 'string'
@@ -2087,24 +2096,24 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           opportunityInfo = {
             _id: oppIdString,
             title: oppObj.title || '',
-            career: oppObj.careerId
+            career: oppObj.career
               ? {
                   _id:
-                    typeof oppObj.careerId._id === 'string'
-                      ? oppObj.careerId._id
-                      : oppObj.careerId._id.toString(),
-                  name: oppObj.careerId.name || '',
-                  code: oppObj.careerId.code || '',
+                    typeof oppObj.career._id === 'string'
+                      ? oppObj.career._id
+                      : oppObj.career._id.toString(),
+                  name: oppObj.career.name || '',
+                  code: oppObj.career.code || '',
                 }
               : undefined,
-            company: oppObj.companyId
+            company: oppObj.company
               ? {
                   _id:
-                    typeof oppObj.companyId._id === 'string'
-                      ? oppObj.companyId._id
-                      : oppObj.companyId._id.toString(),
-                  name: oppObj.companyId.name || '',
-                  logo: oppObj.companyId.logo || undefined,
+                    typeof oppObj.company._id === 'string'
+                      ? oppObj.company._id
+                      : oppObj.company._id.toString(),
+                  name: oppObj.company.name || '',
+                  logo: oppObj.company.logo || undefined,
                 }
               : undefined,
           };
@@ -2210,8 +2219,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         path: 'opportunityId',
         select: 'title',
         populate: [
-          { path: 'careerId', select: 'name code' },
-          { path: 'companyId', select: 'name logo' },
+          { path: 'career', select: 'name code' },
+          { path: 'company', select: 'name logo' },
         ],
       })
       .sort({ createdAt: -1 })
@@ -2337,8 +2346,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           const oppObj = opportunityIdValue as unknown as {
             _id: Types.ObjectId | string;
             title: string;
-            careerId?: unknown;
-            companyId?: unknown;
+            career?: { _id: Types.ObjectId | string; name: string; code: string };
+            company?: { _id: Types.ObjectId | string; name: string; logo?: string };
           };
           const oppIdString =
             typeof oppObj._id === 'string'
@@ -2348,8 +2357,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           let career: { _id: string; name: string; code: string } | undefined;
           let company: { _id: string; name: string; logo?: string } | undefined;
 
-          if (oppObj.careerId && typeof oppObj.careerId === 'object') {
-            const careerObj = oppObj.careerId as unknown as {
+          if (oppObj.career && typeof oppObj.career === 'object') {
+            const careerObj = oppObj.career as unknown as {
               _id: Types.ObjectId | string;
               name: string;
               code: string;
@@ -2364,8 +2373,8 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
             };
           }
 
-          if (oppObj.companyId && typeof oppObj.companyId === 'object') {
-            const companyObj = oppObj.companyId as unknown as {
+          if (oppObj.company && typeof oppObj.company === 'object') {
+            const companyObj = oppObj.company as unknown as {
               _id: Types.ObjectId | string;
               name: string;
               logo?: string;
@@ -2512,7 +2521,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
         const opportunityPopulated = await this.opportunityModel
           .findById(opportunity._id)
-          .populate('careerId', 'name code')
+          .populate('career', 'name code')
           .lean()
           .exec();
 
@@ -2522,7 +2531,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
           title: opportunityPopulated.title,
           description: opportunityPopulated.description || '',
           activities: opportunityPopulated.activities || '',
-          career: (opportunityPopulated.careerId as any)?.name || 'No especificada',
+          career: (opportunityPopulated as any).career?.name || 'No especificada',
           totalHours: opportunityPopulated.totalHours,
           modality: opportunityPopulated.modality,
           workType: opportunityPopulated.workType,
@@ -2631,7 +2640,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       // Obtener la oportunidad
       const opportunity = await this.opportunityModel
         .findById(application.opportunityId)
-        .populate('careerId', 'name code')
+        .populate('career', 'name code')
         .lean()
         .exec();
 
@@ -2673,7 +2682,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         title: opportunity.title,
         description: opportunity.description || '',
         activities: opportunity.activities || '',
-        career: (opportunity.careerId as any)?.name || 'No especificada',
+        career: (opportunity as any).career?.name || 'No especificada',
         totalHours: opportunity.totalHours,
         modality: opportunity.modality,
         workType: opportunity.workType,

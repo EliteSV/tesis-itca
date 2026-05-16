@@ -20,6 +20,10 @@ import {
   StudentSchema,
 } from '@/modules/students/schemas/student.schema';
 import { Career, CareerSchema } from '@/modules/careers/schemas/career.schema';
+import {
+  PracticeProfessional,
+  PracticeProfessionalSchema,
+} from '@/modules/practice-professional/schemas/practice-professional.schema';
 
 @Module({
   imports: [
@@ -30,6 +34,7 @@ import { Career, CareerSchema } from '@/modules/careers/schemas/career.schema';
       { name: User.name, schema: UserSchema },
       { name: Student.name, schema: StudentSchema },
       { name: Career.name, schema: CareerSchema },
+      { name: PracticeProfessional.name, schema: PracticeProfessionalSchema },
     ]),
   ],
   controllers: [OpportunitiesController],

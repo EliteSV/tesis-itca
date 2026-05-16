@@ -1,9 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum PracticeStatus {
-  EN_CURSO = 'en_curso',
-  FINALIZADA = 'finalizada',
-}
+import { PracticeStatus } from '../schemas/practice-professional.schema';
+export { PracticeStatus };
 
 export class PracticeHistoryItemDto {
   @ApiProperty({

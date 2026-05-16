@@ -11,8 +11,8 @@ export enum ActivityStatus {
 
 @Schema({ timestamps: true })
 export class PracticeActivity {
-  @Prop({ type: Types.ObjectId, ref: 'Application', required: true })
-  applicationId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'PracticeProfessional', required: true })
+  practiceProfessionalId: Types.ObjectId;
 
   @Prop({ required: true })
   description: string;
@@ -43,7 +43,7 @@ export class PracticeActivity {
 export const PracticeActivitySchema =
   SchemaFactory.createForClass(PracticeActivity);
 
-PracticeActivitySchema.index({ applicationId: 1 });
+PracticeActivitySchema.index({ practiceProfessionalId: 1 });
 PracticeActivitySchema.index({ status: 1 });
-PracticeActivitySchema.index({ applicationId: 1, activityDate: 1 });
+PracticeActivitySchema.index({ practiceProfessionalId: 1, activityDate: 1 });
 

@@ -25,6 +25,10 @@ import {
   PracticeActivitySchema,
 } from '@/modules/practice-professional/schemas/practice-activity.schema';
 import {
+  PracticeProfessional,
+  PracticeProfessionalSchema,
+} from '@/modules/practice-professional/schemas/practice-professional.schema';
+import {
   Student,
   StudentSchema,
 } from '@/modules/students/schemas/student.schema';
@@ -39,6 +43,7 @@ import {
       { name: Opportunity.name, schema: OpportunitySchema },
       { name: Application.name, schema: ApplicationSchema },
       { name: PracticeActivity.name, schema: PracticeActivitySchema },
+      { name: PracticeProfessional.name, schema: PracticeProfessionalSchema },
       { name: Student.name, schema: StudentSchema },
     ]),
   ],
