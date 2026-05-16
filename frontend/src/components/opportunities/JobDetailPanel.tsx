@@ -272,6 +272,19 @@ export function JobDetailPanel({
           </div>
         )}
 
+        {/* Activities */}
+        {opportunity.activities && (
+          <div>
+            <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 sm:mb-3">
+              Actividades a realizar
+            </h2>
+            <div
+              className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 prose prose-sm max-w-none dark:prose-invert [&_p]:mb-2 sm:[&_p]:mb-3 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ml-4 sm:[&_ul]:ml-6 [&_ol]:ml-4 sm:[&_ol]:ml-6 [&_ul]:space-y-1 sm:[&_ul]:space-y-2 [&_ol]:space-y-1 sm:[&_ol]:space-y-2 break-words"
+              dangerouslySetInnerHTML={{ __html: opportunity.activities }}
+            />
+          </div>
+        )}
+
         {/* Job Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-slate-200 dark:border-slate-700">
           <div>
