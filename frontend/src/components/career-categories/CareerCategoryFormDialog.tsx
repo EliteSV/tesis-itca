@@ -27,13 +27,9 @@ import type {
 const careerCategorySchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   description: z.string().optional(),
-  requiredProfessionalHours: z
-    .union([z.number(), z.string()])
-    .transform((val) => {
-      const num = typeof val === 'string' ? parseFloat(val) : val;
-      return isNaN(num) || num < 0 ? 0 : Math.floor(num);
-    })
-    .pipe(z.number().min(0, 'Las horas profesionales no pueden ser negativas')),
+  requiredProfessionalHours: z.number()
+    .int('Debe ser un número entero')
+    .min(0, 'Las horas profesionales no pueden ser negativas'),
 });
 
 type CareerCategoryFormData = z.infer<typeof careerCategorySchema>;
@@ -92,11 +88,7 @@ export function CareerCategoryFormDialog({
       const categoryData: CreateCareerCategoryDto = {
         name: data.name,
         description: data.description || undefined,
-        requiredProfessionalHours:
-          typeof data.requiredProfessionalHours === 'number' &&
-          !isNaN(data.requiredProfessionalHours)
-            ? data.requiredProfessionalHours
-            : 0,
+        requiredProfessionalHours: data.requiredProfessionalHours,
       };
 
       if (isEditing && careerCategory) {
