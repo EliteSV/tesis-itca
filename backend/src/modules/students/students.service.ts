@@ -609,6 +609,8 @@ export class StudentsService {
       );
     }
 
+    await this.activateStudentIfVerified(student);
+
     return student.toObject();
   }
 
@@ -681,6 +683,8 @@ export class StudentsService {
         totalSubjects: validationResult.totalSubjects,
       });
     }
+
+    await this.activateStudentIfVerified(student);
 
     return student.toObject();
   }
@@ -781,7 +785,21 @@ export class StudentsService {
       );
     }
 
+    await this.activateStudentIfVerified(student);
+
     return student.toObject();
+  }
+
+  private async activateStudentIfVerified(student: StudentDocument) {
+    console.log(student);
+    const allValidated =
+      student.socialServiceDocument?.isValidated === true &&
+      student.passedSubjectsDocument?.isValidated === true &&
+      student.enrollmentProofDocument?.isValidated === true;
+    if (allValidated && student.status === StudentStatus.PERFIL_INCOMPLETO) {
+      student.status = StudentStatus.ACTIVO;
+      await student.save();
+    }
   }
 
   async deleteEnrollmentProofDocument(userId: string) {

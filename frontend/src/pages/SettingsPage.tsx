@@ -11,9 +11,11 @@ import { StudentDocumentsForm } from "@/components/settings/StudentDocumentsForm
 import { StudentProfessionalProfileForm } from "@/components/settings/StudentProfessionalProfileForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UserRole } from "@/types/auth.types";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export function SettingsPage() {
   const { user } = useAuth();
+  const { data: userProfile } = useUserProfile();
   const [searchParams] = useSearchParams();
 
   const shouldChangePassword = searchParams.get("changePassword") === "true";
@@ -34,7 +36,7 @@ export function SettingsPage() {
 
   const hasIncompleteProfile =
     user?.isProfileIncomplete && user?.role === UserRole.ESTUDIANTE;
-
+ const justCompletedProfile = hasIncompleteProfile && userProfile?.isProfileIncomplete === false;
   return (
     <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
       <div className="mb-8">
@@ -61,7 +63,7 @@ export function SettingsPage() {
         </Alert>
       )}
 
-      {hasIncompleteProfile && !shouldChangePassword && (
+      {hasIncompleteProfile && !shouldChangePassword && !justCompletedProfile && (
         <Alert className="mb-6 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
           <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           <AlertTitle className="text-orange-800 dark:text-orange-200">
@@ -76,6 +78,18 @@ export function SettingsPage() {
               Documentación
             </button>
             {' '}y carga los documentos que se te solicitan.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {hasIncompleteProfile && justCompletedProfile && (
+        <Alert className="mb-6 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+          <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertTitle className="text-green-800 dark:text-green-200">
+            Tu perfil ha sido verificado recientemente
+          </AlertTitle>
+          <AlertDescription className="text-green-700 dark:text-green-300">
+           Por favor vuelve a iniciar sesión para tener acceso completo a todas las funcionalidades.
           </AlertDescription>
         </Alert>
       )}
