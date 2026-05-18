@@ -386,20 +386,25 @@ export class DashboardService {
   private async getCoordinatorStats(careerId: string) {
     const careerObjectId = new Types.ObjectId(careerId);
 
-    // Obtener IDs de oportunidades de la carrera primero
-    const opportunityIds = await this.opportunityModel
-      .find({ careerId: careerObjectId })
-      .distinct('_id')
-      .exec();
+    const [opportunityIds, companyIds, career] = await Promise.all([
+      this.opportunityModel
+        .find({ careerId: careerObjectId })
+        .distinct('_id')
+        .exec(),
+      this.opportunityModel
+        .find({ careerId: careerObjectId })
+        .distinct('companyId')
+        .exec(),
+      this.careerModel.findById(careerObjectId).lean().exec(),
+    ]);
 
-    // Obtener estadísticas de estudiantes de la carrera
     const [
       totalStudents,
       activeStudents,
       inactiveStudents,
-      graduatedStudents,
-      totalOpportunities,
-      activeOpportunities,
+      totalCompanies,
+      activeCompanies,
+      inactiveCompanies,
       totalApplications,
       pendingApplications,
       acceptedApplications,
@@ -415,15 +420,14 @@ export class DashboardService {
         careerId: careerObjectId,
         isActive: false,
       }),
-      this.studentModel.countDocuments({
-        careerId: careerObjectId,
-        status: StudentStatus.GRADUADO,
+      this.companyModel.countDocuments({ _id: { $in: companyIds } }),
+      this.companyModel.countDocuments({
+        _id: { $in: companyIds },
+        status: CompanyStatus.ACTIVE,
       }),
-      this.opportunityModel.countDocuments({ careerId: careerObjectId }),
-      this.opportunityModel.countDocuments({
-        careerId: careerObjectId,
-        status: OpportunityStatus.ACTIVE,
-        isActive: true,
+      this.companyModel.countDocuments({
+        _id: { $in: companyIds },
+        status: CompanyStatus.INACTIVE,
       }),
       this.applicationModel.countDocuments({
         opportunityId: { $in: opportunityIds },
@@ -443,21 +447,33 @@ export class DashboardService {
     ]);
 
     return {
-      students: {
+      users: {
         total: totalStudents,
-        active: activeStudents,
-        inactive: inactiveStudents,
-        graduated: graduatedStudents,
+        students: activeStudents,
+        companies: 0,
+        admins: 0,
       },
-      opportunities: {
-        total: totalOpportunities,
-        active: activeOpportunities,
+      companies: {
+        total: totalCompanies,
+        active: activeCompanies,
+        inactive: inactiveCompanies,
       },
-      applications: {
+      requests: {
         total: totalApplications,
         pending: pendingApplications,
-        accepted: acceptedApplications,
+        approved: acceptedApplications,
         rejected: rejectedApplications,
+        inProgress: acceptedApplications,
+      },
+      careers: {
+        total: 1,
+        active: career?.isActive ? 1 : 0,
+        inactive: career?.isActive ? 0 : 1,
+      },
+      careerCategories: {
+        total: 0,
+        active: 0,
+        inactive: 0,
       },
     };
   }

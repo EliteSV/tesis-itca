@@ -254,11 +254,11 @@ export class OpportunitiesController {
   }
 
   @Get('admin/:id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.COORDINADOR)
   @ApiOperation({
     summary: 'Obtener una oportunidad por ID (Admin)',
     description:
-      'Retorna los detalles de una oportunidad específica. Solo disponible para administradores.',
+      'Retorna los detalles de una oportunidad específica. Solo disponible para administradores y coordinadores.',
   })
   @ApiResponse({
     status: 200,
@@ -398,11 +398,11 @@ export class OpportunitiesController {
   }
 
   @Get('admin/:id/applications')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.COORDINADOR)
   @ApiOperation({
     summary: 'Obtener aplicaciones de una oportunidad (Admin)',
     description:
-      'Retorna todas las aplicaciones recibidas para una oportunidad específica. Solo disponible para administradores.',
+      'Retorna todas las aplicaciones recibidas para una oportunidad específica. Solo disponible para administradores y coordinadores.',
   })
   @ApiResponse({
     status: 200,
