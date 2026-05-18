@@ -89,7 +89,7 @@ Responde SOLO en formato JSON válido con esta estructura exacta:
   "documentIdentificationNumber": "carnet tal como en el documento o null"
 }`;
 
-export const PASSED_SUBJECTS_USER_PROMPT = `Las siguientes imágenes son partes del mismo documento (de arriba a abajo). Analiza TODAS y extrae TODAS las materias con checkbox marcado (☑) de cada parte. Une todo en una sola lista passedSubjects; suelen ser 40 o más ítems. No omitas ninguna.`;
+export const PASSED_SUBJECTS_USER_PROMPT = `Analiza el documento de materias ganadas y extrae TODAS las materias con checkbox marcado (☑). Suelen ser 40 o más ítems — no omitas ninguna. Incluye todas las páginas si hay más de una.`;
 
 export const PASSED_SUBJECTS_REFERENCE_LABEL =
   '\n\nEste es el formato de referencia del documento de materias ganadas:';

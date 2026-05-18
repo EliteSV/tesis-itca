@@ -333,7 +333,7 @@ interface SocialServiceExtractionResult {
  * Configuración para la conversión de PDF a imágenes usando pdf-poppler
  */
 const PDF_TO_IMAGE_CONFIG = {
-  scale: 2.0, // Escala para pdf-poppler (2.0 = 200% de resolución)
+  dpi: 200, // DPI para pdftoppm (200 DPI ≈ 1700×2200px en página Letter)
   imageFormat: 'image/png' as const,
 } as const;
 
@@ -729,13 +729,10 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
     }
 
     const outputPrefix = path.join(tempDir, 'page');
-    const scale = Math.round(PDF_TO_IMAGE_CONFIG.scale * 100); // Convertir a porcentaje (200 = 2.0x)
 
     console.log(`Convirtiendo PDF a imágenes usando pdftoppm del sistema...`);
 
-    // Usar pdftoppm del sistema directamente
-    // pdftoppm -png -scale-to 200 input.pdf output_prefix
-    const command = `pdftoppm -png -scale-to ${scale} "${pdfPath}" "${outputPrefix}"`;
+    const command = `pdftoppm -png -r ${PDF_TO_IMAGE_CONFIG.dpi} "${pdfPath}" "${outputPrefix}"`;
 
     try {
       await execAsync(command);
@@ -817,54 +814,12 @@ async function convertPdfToImages(pdfPath: string): Promise<string[]> {
   }
 }
 
-const PASSED_SUBJECTS_IMAGE_CHUNKS = 6;
-
-/**
- * Divide una imagen (base64) en N franjas verticales con solapamiento para no perder filas en bordes.
- */
-async function splitImageIntoVerticalChunks(
-  imageBase64: string,
-  numChunks: number,
-): Promise<string[]> {
-  try {
-    const { createCanvas, loadImage } = await import('canvas');
-    const buffer = Buffer.from(imageBase64, 'base64');
-    const img = await loadImage(buffer);
-    const w = Number(img.width);
-    const h = Number(img.height);
-    const chunkHeight = Math.ceil(h / numChunks);
-    const overlap = Math.floor(chunkHeight * 0.15);
-    const out: string[] = [];
-    for (let i = 0; i < numChunks; i++) {
-      const y = Math.max(0, i * chunkHeight - (i > 0 ? overlap : 0));
-      const sliceH = Math.min(
-        chunkHeight + (i < numChunks - 1 ? overlap : 0),
-        h - y,
-      );
-      if (sliceH <= 0) break;
-      const canvas = createCanvas(w, sliceH);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, y, w, sliceH, 0, 0, w, sliceH);
-      out.push(canvas.toBuffer('image/png').toString('base64'));
-    }
-    return out.length > 0 ? out : [imageBase64];
-  } catch {
-    return [imageBase64];
-  }
-}
-
-type PassedSubjectItem = { cycle: string; code: string; subject: string };
-
-/**
- * Calcula la precisión de validación (0-100) según la confianza del modelo y la cobertura extraída.
- */
 function computePassedSubjectsValidationAccuracy(options: {
   passedCount: number;
   totalSubjects: number;
-  isChunked: boolean;
   rawModelPercent?: number;
 }): number {
-  const { passedCount, totalSubjects, isChunked, rawModelPercent } = options;
+  const { passedCount, totalSubjects, rawModelPercent } = options;
   let score = 70;
   if (
     typeof rawModelPercent === 'number' &&
@@ -877,46 +832,7 @@ function computePassedSubjectsValidationAccuracy(options: {
     const ratio = passedCount / totalSubjects;
     score = Math.round(score * 0.6 + ratio * 100 * 0.4);
   }
-  if (isChunked) {
-    score = Math.max(0, score - 5);
-  }
   return Math.round(Math.min(100, Math.max(0, score)));
-}
-
-function mergePassedSubjectsAnalyses(
-  analyses: PassedSubjectsOpenAIAnalysis[],
-): PassedSubjectsOpenAIAnalysis {
-  const byCode = new Map<string, PassedSubjectItem>();
-  for (const a of analyses) {
-    const list = Array.isArray(a.passedSubjects) ? a.passedSubjects : [];
-    for (const s of list) {
-      const code = String(s.code ?? '').trim();
-      if (!code) continue;
-      const cycle = String(s.cycle ?? '').trim();
-      const subject = String(s.subject ?? '').trim();
-      if (!subject) continue;
-      const existing = byCode.get(code);
-      if (!existing || subject.length > (existing.subject?.length ?? 0)) {
-        byCode.set(code, { cycle, code, subject });
-      }
-    }
-  }
-  const passedSubjects = Array.from(byCode.values());
-  const first = analyses[0];
-  return {
-    isValid: analyses.every((a) => a.isValid !== false),
-    hasValidFormat: first?.hasValidFormat ?? false,
-    errors: analyses.flatMap((a) => (Array.isArray(a.errors) ? a.errors : [])),
-    warnings: analyses.flatMap((a) =>
-      Array.isArray(a.warnings) ? a.warnings : [],
-    ),
-    passedSubjects,
-    totalSubjects: first?.totalSubjects ?? passedSubjects.length,
-    passedCount: passedSubjects.length,
-    validationAccuracyPercent: first?.validationAccuracyPercent,
-    documentStudentName: first?.documentStudentName,
-    documentIdentificationNumber: first?.documentIdentificationNumber,
-  };
 }
 
 /**
@@ -975,17 +891,6 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
 
     console.log(`Documento convertido: ${documentImages.length} página(s)`);
 
-    let documentImagesToUse = documentImages;
-    if (documentImages.length === 1) {
-      documentImagesToUse = await splitImageIntoVerticalChunks(
-        documentImages[0],
-        PASSED_SUBJECTS_IMAGE_CHUNKS,
-      );
-      console.log(
-        `Imagen única dividida en ${documentImagesToUse.length} partes para extracción completa`,
-      );
-    }
-
     const referenceImages = fs.existsSync(referencePath)
       ? await convertPdfToImages(referencePath)
       : [];
@@ -996,27 +901,11 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
       );
     }
 
-    const isChunked = documentImagesToUse.length > 1;
-
-    let analysis: PassedSubjectsOpenAIAnalysis;
-    if (isChunked) {
-      const analyses = await Promise.all(
-        documentImagesToUse.map((chunkImage) => {
-          const partMessages = buildPassedSubjectsOpenAIMessages(
-            [chunkImage],
-            referenceImages,
-          );
-          return validatePassedSubjectsWithOpenAI(openai, partMessages);
-        }),
-      );
-      analysis = mergePassedSubjectsAnalyses(analyses);
-    } else {
-      const messages = buildPassedSubjectsOpenAIMessages(
-        documentImagesToUse,
-        referenceImages,
-      );
-      analysis = await validatePassedSubjectsWithOpenAI(openai, messages);
-    }
+    const messages = buildPassedSubjectsOpenAIMessages(
+      documentImages,
+      referenceImages,
+    );
+    const analysis = await validatePassedSubjectsWithOpenAI(openai, messages);
 
     result.isValid = analysis.isValid ?? false;
     result.hasValidFormat = analysis.hasValidFormat ?? false;
@@ -1028,7 +917,6 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
     result.validationAccuracyPercent = computePassedSubjectsValidationAccuracy({
       passedCount: result.passedCount,
       totalSubjects: result.totalSubjects,
-      isChunked,
       rawModelPercent:
         typeof analysis.validationAccuracyPercent === 'number' &&
         analysis.validationAccuracyPercent >= 0 &&
@@ -1036,11 +924,8 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
           ? analysis.validationAccuracyPercent
           : undefined,
     });
-    result.documentStudentName = safeString(analysis.documentStudentName);
-    result.documentIdentificationNumber = safeString(
-      analysis.documentIdentificationNumber,
-    );
-
+    // pdftotext is exact for digital PDFs — prefer it over OpenAI OCR for
+    // name/carnet/counts. Fall back to OpenAI values only when text extraction fails.
     let pdfText = '';
     try {
       pdfText = await extractTextFromPdf(documentPath);
@@ -1050,19 +935,22 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
     if (pdfText?.trim()) {
       const nameCarnetFromText =
         parsePassedSubjectsNameAndCarnetFromText(pdfText);
-      if (!result.documentStudentName && nameCarnetFromText.documentStudentName)
-        result.documentStudentName = nameCarnetFromText.documentStudentName;
-      if (
-        !result.documentIdentificationNumber &&
-        nameCarnetFromText.documentIdentificationNumber
-      )
-        result.documentIdentificationNumber =
-          nameCarnetFromText.documentIdentificationNumber;
+      result.documentStudentName =
+        nameCarnetFromText.documentStudentName ??
+        safeString(analysis.documentStudentName);
+      result.documentIdentificationNumber =
+        nameCarnetFromText.documentIdentificationNumber ??
+        safeString(analysis.documentIdentificationNumber);
       const totalPlanMatch = pdfText.match(/Materias\s+del\s+plan:\s*(\d+)/i);
       const passedMatch = pdfText.match(/Materias\s+ganadas:\s*(\d+)/i);
       if (totalPlanMatch?.[1])
         result.totalSubjects = parseInt(totalPlanMatch[1], 10);
       if (passedMatch?.[1]) result.passedCount = parseInt(passedMatch[1], 10);
+    } else {
+      result.documentStudentName = safeString(analysis.documentStudentName);
+      result.documentIdentificationNumber = safeString(
+        analysis.documentIdentificationNumber,
+      );
     }
     if (result.documentStudentName || result.documentIdentificationNumber) {
       result.warnings = result.warnings.filter(
@@ -1103,7 +991,12 @@ export async function validatePassedSubjectsDocumentWithOpenAI(
       }
     }
 
-    if (
+    if (result.passedCount === 0) {
+      result.isValid = false;
+      result.errors.push(
+        'El documento no contiene ninguna materia marcada con check (☑). Verifica que el documento sea el correcto y que todas las materias aprobadas estén marcadas.',
+      );
+    } else if (
       result.totalSubjects > 0 &&
       result.passedCount < result.totalSubjects - 1
     ) {
