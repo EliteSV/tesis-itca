@@ -198,9 +198,9 @@ export function SettingsPage() {
 
       {currentTab === "profile" && !shouldChangePassword && (<>
       <UserProfileForm />
-      <div className="mb-6" />
-      <StudentProfileForm />
-      </>)}
+      {user?.role === UserRole.ESTUDIANTE && <StudentProfileForm />}
+      </>
+      )}
 
       {currentTab === "password" && <ChangePasswordForm />}
 
