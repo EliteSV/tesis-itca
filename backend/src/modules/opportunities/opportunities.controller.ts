@@ -155,14 +155,12 @@ export class OpportunitiesController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    const careerId =
-      req.user.role === UserRole.COORDINADOR ? req.user.careerId : undefined;
+
     return this.opportunitiesService.findAllForAdmin(
       pageNum,
       limitNum,
       search,
-      status,
-      careerId,
+      status, 
     );
   }
 

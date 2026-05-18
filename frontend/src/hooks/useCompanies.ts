@@ -7,16 +7,15 @@ import type {
   SendInvitationEmailDto,
 } from '@/types/company.types';
 
-export function useCompanies(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-}) {
+export function useCompanies(
+  params?: { page?: number; limit?: number; search?: string; status?: string },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['companies', params?.page, params?.limit, params?.search, params?.status],
     queryFn: () => companiesApi.getAll(params),
     staleTime: 2 * 60 * 1000,
+    enabled: options?.enabled !== false,
   });
 }
 

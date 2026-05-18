@@ -39,7 +39,7 @@ export function OpportunityFilters({
   const { data: careersData } = useCareers({ limit: 1000, isActive: true });
   const careers = careersData?.data || [];
   
-  const { data: companiesData } = useCompanies({ limit: 1000 });
+  const { data: companiesData } = useCompanies({ limit: 1000 }, { enabled: showFilters });
   const companies = companiesData?.data || [];
 
   const activeFiltersCount =

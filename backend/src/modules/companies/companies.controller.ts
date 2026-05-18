@@ -114,7 +114,7 @@ export class CompaniesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.COORDINADOR)
   @ApiOperation({ summary: 'Obtener todas las empresas' })
   @ApiQuery({
     name: 'page',
