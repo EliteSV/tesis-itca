@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Plus, Search, Eye, Edit, Trash2, Share2, GraduationCap, Users, FileText, Power, PowerOff, Calendar, MapPin, Clock, Building2 } from 'lucide-react';
+import { Briefcase, Plus, Search, Edit, Trash2, Share2, GraduationCap, Users, Power, PowerOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,8 +30,6 @@ export function OpportunitiesPage() {
   const [editingOpportunity, setEditingOpportunity] =
     useState<Opportunity | null>(null);
   const [sharingOpportunity, setSharingOpportunity] =
-    useState<Opportunity | null>(null);
-  const [viewingOpportunity, setViewingOpportunity] =
     useState<Opportunity | null>(null);
   const [opportunityToDelete, setOpportunityToDelete] =
     useState<Opportunity | null>(null);
@@ -64,10 +62,6 @@ export function OpportunitiesPage() {
   const handleEdit = useCallback((opportunity: Opportunity) => {
     setEditingOpportunity(opportunity);
     setIsFormOpen(true);
-  }, []);
-
-  const handleView = useCallback((opportunity: Opportunity) => {
-    setViewingOpportunity(opportunity);
   }, []);
 
   const handleShare = useCallback((opportunity: Opportunity) => {
@@ -244,16 +238,6 @@ export function OpportunitiesPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleView(opportunity)}
-                        className="flex-1 sm:flex-initial"
-                        title="Ver"
-                      >
-                        <Eye className="h-4 w-4 sm:mr-0 md:mr-2" />
-                        <span className="hidden md:inline">Ver</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
                         onClick={() => handleShare(opportunity)}
                         className="flex-1 sm:flex-initial"
                         title="Compartir"
@@ -368,180 +352,6 @@ export function OpportunitiesPage() {
           onOpenChange={(open) => !open && setSharingOpportunity(null)}
           opportunity={sharingOpportunity}
         />
-      )}
-
-      {viewingOpportunity && (
-        <Dialog
-          open={!!viewingOpportunity}
-          onOpenChange={(open) => !open && setViewingOpportunity(null)}
-        >
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3 break-words">
-                    {viewingOpportunity.title}
-                  </DialogTitle>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <Badge 
-                      variant={getStatusBadgeVariant(viewingOpportunity?.status)} 
-                      className="text-xs sm:text-sm px-2.5 py-1"
-                    >
-                      {viewingOpportunity?.status ? capitalizeFirst(String(viewingOpportunity.status)) : 'Sin estado'}
-                    </Badge>
-                    <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                      Creada el {formatDate(viewingOpportunity.createdAt)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </DialogHeader>
-            
-            <div className="px-6 py-6 space-y-6">
-              {viewingOpportunity.description && (
-                <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    Descripción
-                  </h3>
-                  <div
-                    className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed prose prose-sm sm:prose-base max-w-none dark:prose-invert [&_p]:mb-3 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ml-4 sm:[&_ul]:ml-6 [&_ol]:ml-4 sm:[&_ol]:ml-6 [&_ul]:space-y-1 [&_ol]:space-y-1"
-                    dangerouslySetInnerHTML={{ __html: viewingOpportunity.description }}
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="p-2.5 sm:p-3 bg-primary/10 dark:bg-primary/20 rounded-lg flex-shrink-0">
-                      <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-                        Carrera
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 break-words">
-                        {viewingOpportunity.career?.name || 'No especificada'}
-                      </p>
-                      {viewingOpportunity.career?.code && (
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5">
-                          Código: {viewingOpportunity.career.code}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="p-2.5 sm:p-3 bg-secondary/20 dark:bg-secondary/10 rounded-lg flex-shrink-0">
-                      <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-                        Horas Totales
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                        {viewingOpportunity.totalHours} horas
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5">
-                        Equivalente a {Math.round(viewingOpportunity.totalHours / 8)} días laborables
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    <div className="p-2.5 sm:p-3 bg-accent/20 dark:bg-accent/10 rounded-lg flex-shrink-0">
-                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-                        Vacantes Disponibles
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                        {viewingOpportunity.availablePositions} posición{viewingOpportunity.availablePositions !== 1 ? 'es' : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {viewingOpportunity.company && (
-                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      <div className="p-2.5 sm:p-3 bg-primary/10 dark:bg-primary/20 rounded-lg flex-shrink-0">
-                        <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-                          Empresa
-                        </p>
-                        <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 break-words">
-                          {viewingOpportunity.company.name}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {viewingOpportunity.modality && (
-                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      <div className="p-2.5 sm:p-3 bg-secondary/20 dark:bg-secondary/10 rounded-lg flex-shrink-0">
-                        <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-                          Modalidad
-                        </p>
-                        <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                          {viewingOpportunity.modality === 'remoto' ? 'Remoto' : 'Presencial'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {viewingOpportunity.workType && (
-                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      <div className="p-2.5 sm:p-3 bg-accent/20 dark:bg-accent/10 rounded-lg flex-shrink-0">
-                        <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">
-                          Tipo de Trabajo
-                        </p>
-                        <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                          {viewingOpportunity.workType === 'full-time' ? 'Tiempo Completo' : 'Tiempo Parcial'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {viewingOpportunity.expirationDate && (
-                <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-slate-600 dark:text-slate-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                        Fecha de Expiración
-                      </p>
-                      <p className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100">
-                        {formatDate(viewingOpportunity.expirationDate)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       )}
 
       <Dialog
