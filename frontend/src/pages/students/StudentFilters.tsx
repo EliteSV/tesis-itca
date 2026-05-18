@@ -24,6 +24,7 @@ export function StudentFilters({
   const activeFiltersCount =
     (filters.careerId ? 1 : 0) +
     (filters.status ? 1 : 0) +
+    (filters.practiceStatus ? 1 : 0) +
     (filters.dateFrom ? 1 : 0) +
     (filters.dateTo ? 1 : 0);
 
@@ -90,6 +91,23 @@ export function StudentFilters({
                   <SelectItem value={StudentStatus.ACTIVO}>Activo</SelectItem>
                   <SelectItem value={StudentStatus.INACTIVO}>Inactivo</SelectItem>
                   <SelectItem value={StudentStatus.GRADUADO}>Graduado</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.practiceStatus || 'all'}
+                onValueChange={(value) =>
+                  onFilterChange('practiceStatus', value === 'all' ? '' : value)
+                }
+              >
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Práctica" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las prácticas</SelectItem>
+                  <SelectItem value="en_curso">En Curso</SelectItem>
+                  <SelectItem value="finalizada">Finalizada</SelectItem>
+                  <SelectItem value="sin_practica">Sin Práctica</SelectItem>
                 </SelectContent>
               </Select>
 

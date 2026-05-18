@@ -86,9 +86,15 @@ export function StudentTable({
                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell min-w-[150px]">
                   Carrera
                 </th>
-                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[120px]">
-                  {isReadOnly ? 'Práctica' : 'Estado'}
+                
+                {!isReadOnly && (
+                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[120px]">
+                  Estado
                 </th>
+                )}
+                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[120px]">
+                    Práctica
+                  </th>
                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell min-w-[100px]">
                   <TableSortButton
                     field="createdAt"
@@ -145,10 +151,15 @@ export function StudentTable({
                       {student.career?.name || '-'}
                     </p>
                   </td>
+                    {!isReadOnly && (
+                      <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap min-w-[120px]">
+                          {getStatusBadge(student.status, student.isActive)}
+                      </td>
+                    )}
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap min-w-[120px]">
-                    {isReadOnly
-                      ? getPracticeStatusBadge(student.practiceStatus)
-                      : getStatusBadge(student.status, student.isActive)}
+                    {
+                      getPracticeStatusBadge(student.practiceStatus)
+                    }
                   </td>
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap hidden sm:table-cell min-w-[100px]">
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -235,10 +246,9 @@ export function StudentTable({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 relative">
-                {isReadOnly
-                  ? getPracticeStatusBadge(student.practiceStatus)
-                  : getStatusBadge(student.status, student.isActive)}
+              <div className="flex items-center gap-2 flex-shrink-0 relative flex-wrap justify-end">
+                {!isReadOnly && getStatusBadge(student.status, student.isActive)}
+                 {getPracticeStatusBadge(student.practiceStatus)} 
                 {!isReadOnly ? (
                   <TableActionsDropdownMobile
                     itemId={student._id}

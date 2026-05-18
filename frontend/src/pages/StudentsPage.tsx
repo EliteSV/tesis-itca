@@ -81,11 +81,13 @@ export function StudentsPage() {
   const getInitialFilters = (): Filters => {
     const careerIdParam = searchParams.get('careerId');
     const statusParam = searchParams.get('status');
+    const practiceStatusParam = searchParams.get('practiceStatus');
     const dateFromParam = searchParams.get('dateFrom');
     const dateToParam = searchParams.get('dateTo');
     return {
       careerId: careerIdParam || '',
       status: statusParam || '',
+      practiceStatus: practiceStatusParam || '',
       dateFrom: dateFromParam || undefined,
       dateTo: dateToParam || undefined,
     };
@@ -113,6 +115,7 @@ export function StudentsPage() {
       search: debouncedSearch || undefined,
       careerId: filters.careerId || undefined,
       status: filters.status || undefined,
+      practiceStatus: filters.practiceStatus || undefined,
       sortBy: sort.field,
       sortOrder: sort.order,
       dateFrom: filters.dateFrom || undefined,
@@ -124,6 +127,7 @@ export function StudentsPage() {
       debouncedSearch,
       filters.careerId,
       filters.status,
+      filters.practiceStatus,
       filters.dateFrom,
       filters.dateTo,
       sort.field,
@@ -193,6 +197,10 @@ export function StudentsPage() {
       params.set('status', filters.status);
     }
 
+    if (filters.practiceStatus) {
+      params.set('practiceStatus', filters.practiceStatus);
+    }
+
     if (filters.dateFrom) {
       params.set('dateFrom', filters.dateFrom);
     }
@@ -214,6 +222,7 @@ export function StudentsPage() {
     sort.order,
     filters.careerId,
     filters.status,
+    filters.practiceStatus,
     filters.dateFrom,
     filters.dateTo,
     setSearchParams,
@@ -249,6 +258,7 @@ export function StudentsPage() {
     setFilters({
       careerId: '',
       status: '',
+      practiceStatus: '',
       dateFrom: undefined,
       dateTo: undefined,
     });
@@ -260,6 +270,7 @@ export function StudentsPage() {
     () =>
       filters.careerId !== '' ||
       filters.status !== '' ||
+      filters.practiceStatus !== '' ||
       filters.dateFrom !== undefined ||
       filters.dateTo !== undefined,
     [filters],

@@ -427,6 +427,7 @@ export class StudentsController {
     @Query('sortOrder') sortOrder?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
+    @Query('practiceStatus') practiceStatus?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
@@ -458,6 +459,7 @@ export class StudentsController {
       sortOrder,
       dateFrom,
       dateTo,
+      practiceStatus,
     );
   }
 

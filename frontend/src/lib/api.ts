@@ -631,6 +631,7 @@ export const studentsApi = {
     search?: string;
     careerId?: string;
     status?: string;
+    practiceStatus?: string;
     isActive?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';

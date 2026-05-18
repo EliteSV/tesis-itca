@@ -12,6 +12,7 @@ export function useStudents(params?: {
   search?: string;
   careerId?: string;
   status?: string;
+  practiceStatus?: string;
   isActive?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -26,6 +27,7 @@ export function useStudents(params?: {
       params?.search,
       params?.careerId,
       params?.status,
+      params?.practiceStatus,
       params?.isActive,
       params?.sortBy,
       params?.sortOrder,

@@ -16,6 +16,7 @@ export interface SortConfig {
 export interface Filters {
   careerId: string;
   status: string;
+  practiceStatus: string;
   dateFrom?: string;
   dateTo?: string;
 }

@@ -172,6 +172,7 @@ export class StudentsService {
     sortOrder?: string,
     dateFrom?: string,
     dateTo?: string,
+    practiceStatus?: string,
   ) {
     const skip = (page - 1) * limit;
     const query: {
@@ -180,6 +181,7 @@ export class StudentsService {
       status?: StudentStatus;
       isActive?: boolean;
       createdAt?: { $gte?: Date; $lte?: Date };
+      userId?: { $in: Types.ObjectId[] } | { $nin: Types.ObjectId[] };
     } = {};
 
     if (search) {
@@ -215,6 +217,32 @@ export class StudentsService {
       }
     }
 
+    if (practiceStatus) {
+      if (practiceStatus === 'sin_practica') {
+        const allPractices = await this.practiceProfessionalModel
+          .find({})
+          .select('studentId')
+          .lean()
+          .exec();
+        const usersWithPractice = allPractices.map(
+          (p) => new Types.ObjectId(p.studentId.toString()),
+        );
+        query.userId = { $nin: usersWithPractice };
+      } else {
+        const practices = await this.practiceProfessionalModel
+          .find({ status: practiceStatus })
+          .select('studentId')
+          .lean()
+          .exec();
+        if (practices.length === 0) {
+          return { data: [], total: 0, page, limit, totalPages: 0 };
+        }
+        query.userId = {
+          $in: practices.map((p) => new Types.ObjectId(p.studentId.toString())),
+        };
+      }
+    }
+
     const sortField = sortBy || 'createdAt';
     const sortDirection: 1 | -1 = sortOrder === 'asc' ? 1 : -1;
     const sortObj: Record<string, 1 | -1> = { [sortField]: sortDirection };
@@ -231,9 +259,32 @@ export class StudentsService {
       this.studentModel.countDocuments(query).exec(),
     ]);
 
-    const transformedData = data.map((student) =>
-      this.transformStudentWithCareer(student as Record<string, unknown>),
+    const userIds = data
+      .filter((s) => s.userId)
+      .map((s) => new Types.ObjectId(s.userId.toString()));
+
+    const practices =
+      userIds.length > 0
+        ? await this.practiceProfessionalModel
+            .find({ studentId: { $in: userIds } })
+            .select('studentId status')
+            .lean()
+            .exec()
+        : [];
+
+    const practiceMap = new Map(
+      practices.map((p) => [p.studentId.toString(), p.status]),
     );
+
+    const transformedData = data.map((student) => {
+      const transformed = this.transformStudentWithCareer(
+        student as Record<string, unknown>,
+      );
+      return {
+        ...transformed,
+        practiceStatus: practiceMap.get(student.userId?.toString() ?? '') ?? null,
+      };
+    });
 
     return {
       data: transformedData,
