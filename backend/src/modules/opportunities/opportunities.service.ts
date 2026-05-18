@@ -806,6 +806,7 @@ export class OpportunitiesService {
       applicationId: application._id,
       studentId: application.studentId,
       opportunityId: opportunityObjectId,
+      companyId: opportunity.companyId,
       startDate: new Date(),
     });
 

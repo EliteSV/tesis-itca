@@ -9,6 +9,10 @@ import {
 import { User, UserSchema } from '@/modules/auth/schemas/user.schema';
 import { Career, CareerSchema } from '@/modules/careers/schemas/career.schema';
 import { StudentOwnershipGuard } from '@/common/guards/student-ownership.guard';
+import {
+  PracticeProfessional,
+  PracticeProfessionalSchema,
+} from '@/modules/practice-professional/schemas/practice-professional.schema';
 
 @Module({
   imports: [
@@ -16,6 +20,10 @@ import { StudentOwnershipGuard } from '@/common/guards/student-ownership.guard';
       { name: Student.name, schema: StudentSchema },
       { name: User.name, schema: UserSchema },
       { name: Career.name, schema: CareerSchema },
+      {
+        name: PracticeProfessional.name,
+        schema: PracticeProfessionalSchema,
+      },
     ]),
   ],
   controllers: [StudentsController],

@@ -382,7 +382,7 @@ export class PracticeProfessionalService {
     const studentUserId = await this.resolveStudentUserId(studentId);
 
     const practice = await this.practiceProfessionalModel
-      .findOne({ studentId: studentUserId, finalizedAt: null })
+      .findOne({ studentId: studentUserId, })
       .populate({
         path: 'opportunity',
         select: 'companyId responsibleUserId title description activities',
@@ -589,7 +589,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
     const studentUserId = await this.resolveStudentUserId(studentId);
 
     const practice = await this.practiceProfessionalModel
-      .findOne({ studentId: studentUserId, finalizedAt: null })
+      .findOne({ studentId: studentUserId })
       .populate({
         path: 'opportunity',
         populate: [
@@ -628,6 +628,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
       student: transformedStudent,
       application: practice.application,
       opportunity: practice.opportunity,
+      practiceProfessional: practice,
       approvedHours,
     };
   }

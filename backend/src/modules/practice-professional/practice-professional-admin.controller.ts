@@ -16,7 +16,7 @@ import { PracticeProfessionalResponseDto } from './dto/practice-professional-res
 @ApiTags('Práctica Profesional - Admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.COORDINADOR)
 @Controller('practice-professional/admin')
 export class PracticeProfessionalAdminController {
   constructor(

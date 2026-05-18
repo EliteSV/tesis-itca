@@ -20,6 +20,10 @@ import {
 } from '@/modules/students/schemas/student.schema';
 import { User, UserDocument } from '@/modules/auth/schemas/user.schema';
 import { UserRole } from '@/modules/auth/schemas/user.schema';
+import {
+  PracticeProfessional,
+  PracticeProfessionalDocument,
+} from '@/modules/practice-professional/schemas/practice-professional.schema';
 import { CreateStudentDto } from '@/modules/students/dto/create-student.dto';
 import { UpdateStudentDto } from '@/modules/students/dto/update-student.dto';
 import {
@@ -60,6 +64,8 @@ export class StudentsService {
   constructor(
     @InjectModel(Student.name) private studentModel: Model<StudentDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(PracticeProfessional.name)
+    private practiceProfessionalModel: Model<PracticeProfessionalDocument>,
     private configService: ConfigService,
   ) {}
 
@@ -220,6 +226,67 @@ export class StudentsService {
         .skip(skip)
         .limit(limit)
         .sort(sortObj)
+        .lean()
+        .exec(),
+      this.studentModel.countDocuments(query).exec(),
+    ]);
+
+    const transformedData = data.map((student) =>
+      this.transformStudentWithCareer(student as Record<string, unknown>),
+    );
+
+    return {
+      data: transformedData,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findAllForCompany(
+    companyId: string,
+    page = 1,
+    limit = 10,
+    search?: string,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const practices = await this.practiceProfessionalModel
+      .find({ companyId: new Types.ObjectId(companyId) })
+      .select('studentId')
+      .lean()
+      .exec();
+
+    const userIds = [
+      ...new Set(practices.map((p) => p.studentId.toString())),
+    ].map((id) => new Types.ObjectId(id));
+
+    if (userIds.length === 0) {
+      return { data: [], total: 0, page, limit, totalPages: 0 };
+    }
+
+    const query: {
+      userId: { $in: Types.ObjectId[] };
+      $or?: Array<{ [key: string]: { $regex: string; $options: string } }>;
+    } = { userId: { $in: userIds } };
+
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { identificationNumber: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.studentModel
+        .find(query)
+        .populate('careerId', 'name code')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
         .lean()
         .exec(),
       this.studentModel.countDocuments(query).exec(),

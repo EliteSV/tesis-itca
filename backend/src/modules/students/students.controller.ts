@@ -337,7 +337,7 @@ export class StudentsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.COORDINADOR)
+  @Roles(UserRole.ADMIN, UserRole.COORDINADOR, UserRole.COMPANY)
   @ApiOperation({ summary: 'Obtener todos los estudiantes' })
   @ApiQuery({
     name: 'page',
@@ -408,7 +408,15 @@ export class StudentsController {
     type: [StudentResponseDto],
   })
   findAll(
-    @Request() req: { user: { id: string; role: string; careerId?: string } },
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role: UserRole;
+        careerId?: string;
+        companyId?: string;
+      };
+    },
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
@@ -422,6 +430,16 @@ export class StudentsController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
+
+    if (req.user.role === UserRole.COMPANY) {
+      return this.studentsService.findAllForCompany(
+        req.user.companyId!,
+        pageNum,
+        limitNum,
+        search,
+      );
+    }
+
     const isActiveFilter =
       isActive !== undefined ? isActive === 'true' : undefined;
 

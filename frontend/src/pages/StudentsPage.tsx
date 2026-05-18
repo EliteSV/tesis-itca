@@ -12,7 +12,6 @@ import {
   useToggleStudentStatus,
   useGenerateTemporaryPassword,
 } from '@/hooks/useStudents';
-import { useStudentsWithApplications } from '@/hooks/useOpportunities';
 import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/types/auth.types';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -141,16 +140,9 @@ export function StudentsPage() {
     [page, limit, debouncedSearch],
   );
 
-  const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
-    isCompanyUser ? undefined : queryParams,
+  const { data, isLoading } = useStudents(
+    isCompanyUser ? studentsQueryParams : queryParams,
   );
-  const { data: companyStudentsData, isLoading: isLoadingCompanyStudents } =
-    useStudentsWithApplications(
-      isCompanyUser ? studentsQueryParams : undefined,
-    );
-
-  const data = isCompanyUser ? companyStudentsData : studentsData;
-  const isLoading = isCompanyUser ? isLoadingCompanyStudents : isLoadingStudents;
 
   const deleteMutation = useDeleteStudent();
   const toggleStatusMutation = useToggleStudentStatus();

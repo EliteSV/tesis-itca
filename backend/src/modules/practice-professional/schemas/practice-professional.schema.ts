@@ -27,6 +27,9 @@ export class PracticeProfessional {
   @Prop({ type: Types.ObjectId, ref: 'Opportunity', required: true })
   opportunityId: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
+  companyId: Types.ObjectId;
+
   @Prop({ required: true })
   startDate: Date;
 
@@ -74,6 +77,7 @@ export const PracticeProfessionalSchema =
 
 PracticeProfessionalSchema.index({ studentId: 1 });
 PracticeProfessionalSchema.index({ opportunityId: 1 });
+PracticeProfessionalSchema.index({ companyId: 1 });
 PracticeProfessionalSchema.index({ studentId: 1, finalizedAt: 1 });
 
 PracticeProfessionalSchema.virtual('opportunity', {

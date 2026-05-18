@@ -36,6 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       name: user.name,
       role: user.role,
       careerId: user.careerId ? user.careerId.toString() : undefined,
+      companyId: user.companyId ? user.companyId.toString() : undefined,
     };
   }
 }
