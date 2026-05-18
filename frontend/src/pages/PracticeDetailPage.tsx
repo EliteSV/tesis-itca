@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { usePracticeProfessionalByApplicationId } from '@/hooks/usePracticeProfessional';
+import { usePracticeProfessionalById } from '@/hooks/usePracticeProfessional';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +16,16 @@ import {
   AlertCircle,
   Wrench,
   ArrowLeft,
+  FileText,
+  Star,
 } from 'lucide-react';
 import { formatDate } from '@/utils/date.utils';
 import { getImageUrl } from '@/lib/utils';
 import type { ActivityStatus } from '@/types/practice-professional.types';
 import { ActivityStatus as ActivityStatusEnum } from '@/types/practice-professional.types';
+import { generatePracticeProfessionalPDF, generatePracticeEvaluationPDF } from '@/utils/pdf.utils';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useToastContext } from '@/contexts/ToastContext';
 
 function getActivityStatusBadge(status: ActivityStatus) {
   switch (status) {
@@ -49,11 +55,58 @@ function getActivityStatusBadge(status: ActivityStatus) {
 }
 
 export function PracticeDetailPage() {
-  const { applicationId } = useParams<{ applicationId: string }>();
+  const { practiceId } = useParams<{ practiceId: string }>();
   const navigate = useNavigate();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingEvalPDF, setIsGeneratingEvalPDF] = useState(false);
 
   const { data: practiceData, isLoading: isLoadingPractice, error } =
-    usePracticeProfessionalByApplicationId(applicationId || null);
+    usePracticeProfessionalById(practiceId || null);
+  const { data: userProfile } = useUserProfile();
+  const toast = useToastContext();
+
+  const handleExportPDF = async () => {
+    if (!practiceData) return;
+
+    const approvedActivities = practiceData.activities.filter(
+      (activity) => activity.status === ActivityStatusEnum.APPROVED,
+    );
+
+    if (approvedActivities.length === 0) {
+      toast.error('Error', 'No hay actividades aprobadas para exportar');
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+    try {
+      const studentName = userProfile?.name || 'Estudiante';
+      await generatePracticeProfessionalPDF(practiceData, studentName);
+      toast.success('PDF generado', 'El registro de práctica profesional se ha exportado correctamente.');
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      const errorMessage =
+        (error as { message?: string })?.message || 'Error al generar el PDF';
+      toast.error('Error', errorMessage);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleExportEvaluationPDF = async () => {
+    if (!practiceData?.practiceEvaluation) return;
+    setIsGeneratingEvalPDF(true);
+    try {
+      const studentName = userProfile?.name || 'Estudiante';
+      await generatePracticeEvaluationPDF(practiceData, studentName);
+      toast.success('PDF generado', 'La evaluación final se ha exportado correctamente.');
+    } catch (error) {
+      const errorMessage =
+        (error as { message?: string })?.message || 'Error al generar el PDF';
+      toast.error('Error', errorMessage);
+    } finally {
+      setIsGeneratingEvalPDF(false);
+    }
+  };
 
   if (isLoadingPractice) {
     return (
@@ -223,6 +276,24 @@ export function PracticeDetailPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Actividades
           </h2>
+          <Button
+            onClick={handleExportPDF}
+            variant="outline"
+            className="gap-2"
+            disabled={isGeneratingPDF || !practiceData}
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generando...
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Exportar PDF
+              </>
+            )}
+          </Button>
         </div>
 
         {activities.length === 0 ? (
@@ -365,6 +436,93 @@ export function PracticeDetailPage() {
         )}
 
       </Card>
+
+      {/* Evaluación Final */}
+      {practiceData.practiceEvaluation ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Evaluación Final
+              </h2>
+            </div>
+            <Button
+              onClick={handleExportEvaluationPDF}
+              variant="outline"
+              className="gap-2"
+              disabled={isGeneratingEvalPDF}
+            >
+              {isGeneratingEvalPDF ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4" />
+                  Exportar PDF
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="space-y-4">
+            {[
+              { label: 'Calidad y Organización del Trabajo', key: 'qualityAndOrganization' },
+              { label: 'Conocimiento y Aplicación', key: 'knowledgeAndApplication' },
+              { label: 'Capacidad de Aprendizaje', key: 'learningCapacity' },
+              { label: 'Asistencia y Puntualidad', key: 'attendanceAndPunctuality' },
+              { label: 'Iniciativa y Criterio', key: 'initiativeAndJudgment' },
+            ].map(({ label, key }) => {
+              const score = practiceData.practiceEvaluation![key as keyof typeof practiceData.practiceEvaluation] as number;
+              return (
+                <div key={key} className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-slate-700 dark:text-slate-300 flex-1">{label}</span>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-5 w-5 ${star <= score ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700'}`}
+                      />
+                    ))}
+                    <span className="ml-2 text-sm font-semibold text-slate-900 dark:text-slate-100 w-6 text-right">
+                      {score}/5
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Promedio general</span>
+            <span className="text-xl font-bold text-primary">
+              {(
+                (practiceData.practiceEvaluation.qualityAndOrganization +
+                  practiceData.practiceEvaluation.knowledgeAndApplication +
+                  practiceData.practiceEvaluation.learningCapacity +
+                  practiceData.practiceEvaluation.attendanceAndPunctuality +
+                  practiceData.practiceEvaluation.initiativeAndJudgment) / 5
+              ).toFixed(1)}{' '}
+              / 5
+            </span>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="h-5 w-5 text-slate-400" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              Evaluación Final
+            </h2>
+          </div>
+          <div className="text-center py-8">
+            <Star className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Aún no se ha registrado una evaluación para esta práctica
+            </p>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

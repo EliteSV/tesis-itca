@@ -9,6 +9,7 @@ import type {
 import type {
   PracticeProfessional,
   PracticeActivity,
+  PracticeEvaluation,
 } from '@/types/practice-professional.types';
 import { ActivityStatus } from '@/types/practice-professional.types';
 
@@ -741,4 +742,328 @@ export async function generatePracticeProfessionalPDF(
     console.error('Error generando PDF:', error);
     throw error;
   }
+}
+
+export async function generatePracticeEvaluationPDF(
+  practiceData: PracticeProfessional,
+  studentName: string,
+): Promise<void> {
+  const evaluation = practiceData.practiceEvaluation as PracticeEvaluation;
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 13;
+  const contentWidth = pageWidth - 2 * margin;
+  let y = margin;
+
+  const loadImage = (src: string): Promise<string | null> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) { ctx.drawImage(img, 0, 0); resolve(canvas.toDataURL('image/png')); }
+          else resolve(null);
+        } catch { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+
+  const logoData = await loadImage('/assets/LogoITCA_Web.png');
+  const cdaLogoData = await loadImage('/assets/Logo_CDA.png');
+
+  const logoW = 28;
+  const cdaW = 20;
+  let logoH = 0;
+  let cdaH = 0;
+
+  if (logoData) {
+    const img = new Image();
+    img.src = logoData;
+    await new Promise((r) => { img.onload = () => { logoH = (img.height * logoW) / img.width; r(null); }; img.onerror = r; });
+  }
+  if (cdaLogoData) {
+    const img = new Image();
+    img.src = cdaLogoData;
+    await new Promise((r) => { img.onload = () => { cdaH = (img.height * cdaW) / img.width; r(null); }; img.onerror = r; });
+  }
+
+  // ── Header ──────────────────────────────────────────────────────────────
+  const headerH = Math.max(logoH, cdaH, 16) + 2;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, contentWidth, headerH);
+
+  if (logoData && logoH > 0) {
+    doc.addImage(logoData, 'PNG', margin + 2, y + (headerH - logoH) / 2, logoW, logoH);
+  }
+  if (cdaLogoData && cdaH > 0) {
+    doc.addImage(cdaLogoData, 'PNG', pageWidth - margin - cdaW - 2, y + (headerH - cdaH) / 2, cdaW, cdaH);
+  }
+
+  const titleCX = pageWidth / 2;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('B) EVALUACIÓN DE PRÁCTICA PROFESIONAL', titleCX, y + headerH / 2 - 2, { align: 'center' });
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text('(Documento a ser completado por el tutor del alumno en la empresa)', titleCX, y + headerH / 2 + 4, { align: 'center' });
+
+  y += headerH + 4;
+
+  // ── Intro text ───────────────────────────────────────────────────────────
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  const introParas = [
+    'ITCA-FEPADE agradece la valiosa colaboración de su empresa en la formación profesional y humana de sus alumnos y futuros profesionales.',
+    'El siguiente cuestionario se le envía a usted con el objetivo de evaluar el desempeño de los alumnos durante el período establecido para la práctica profesional, esta evaluación sirve para certificar la calidad de aprendizaje del alumno.',
+    'Por este motivo, le solicitamos responder las siguientes preguntas respecto al desempeño mostrado por el alumno en el trabajo asignado.',
+  ];
+  introParas.forEach((para) => {
+    const lines = doc.splitTextToSize(para, contentWidth);
+    doc.text(lines, margin, y);
+    y += lines.length * 3.8;
+  });
+  y += 3;
+
+  // ── Rating scale box ─────────────────────────────────────────────────────
+  const scaleItems = [
+    '5: Sobresaliente: El alumno constantemente excede las expectativas para las tareas asignadas. (Es proactivo)',
+    '4: Alta eficiencia: El alumno siempre logra alcanzar las metas encomendadas. (Es eficiente)',
+    '3: Efectivo: El alumno frecuentemente alcanza las metas encomendadas. (Es normal, trabaja de buena manera)',
+    '2: Regular: El alumno cumple las tareas en un grado mínimo. (Hace solo lo que se le pide sin evaluar su calidad)',
+    '1: Necesita mejorar: El Alumno necesita supervisión constante y no cumple con las tareas asignadas.',
+  ];
+  const scaleBoxH = 5 + scaleItems.length * 4.2 + 3;
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, contentWidth, scaleBoxH);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Tabla de evaluación:', margin + 3, y + 4.5);
+  doc.setFont('helvetica', 'normal');
+  scaleItems.forEach((item, i) => {
+    doc.text(item, margin + 3, y + 9 + i * 4.2);
+  });
+  y += scaleBoxH + 4;
+
+  // ── Info fields ───────────────────────────────────────────────────────────
+  const companyName = practiceData.opportunity.company?.name || '';
+  const careerName = practiceData.opportunity.career?.name || '';
+  const totalHours = practiceData.opportunity.totalHours?.toString() || '';
+
+  // Left half and right half column x positions and widths
+  const halfW = contentWidth / 2 - 2;
+  const rightX = margin + contentWidth / 2 + 2;
+
+  // Helper: draws "LABEL: ___value___" starting at x, spanning width w
+  const field = (label: string, value: string, x: number, fieldY: number, w: number) => {
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, x, fieldY);
+    const lw = doc.getTextWidth(label);
+    doc.setFont('helvetica', 'normal');
+    doc.setLineWidth(0.2);
+    const lineStart = x + lw + 1.5;
+    const lineEnd = x + w;
+    doc.line(lineStart, fieldY, lineEnd, fieldY);
+    if (value) {
+      const clipped = doc.splitTextToSize(value, lineEnd - lineStart - 2)[0] || '';
+      doc.text(clipped, lineStart + 1, fieldY - 0.8);
+    }
+  };
+
+  const rowGap = 5.5;
+
+  // Row 1: EMPRESA (full width)
+  field('EMPRESA:', companyName, margin, y, contentWidth);
+  y += rowGap;
+
+  // Row 2: TUTOR DEL ALUMNO | CARGO
+  field('TUTOR DEL ALUMNO EN LA EMPRESA:', '', margin, y, halfW);
+  field('CARGO:', '', rightX, y, halfW);
+  y += rowGap;
+
+  // Row 3: NOMBRE DEL ALUMNO | DEPARTAMENTO ACADÉMICO
+  field('NOMBRE DEL ALUMNO:', studentName, margin, y, halfW);
+  field('DEPARTAMENTO ACADÉMICO:', careerName, rightX, y, halfW);
+  y += rowGap;
+
+  // Row 4: CORREO ELECTRÓNICO | CARRERA
+  field('CORREO ELECTRÓNICO:', '', margin, y, halfW);
+  field('CARRERA:', careerName, rightX, y, halfW);
+  y += rowGap;
+
+  // Row 5: PERÍODO DE LA PRÁCTICA: INICIO: ___ FINALIZO: ___
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PERÍODO DE LA PRÁCTICA:', margin, y);
+  const perLW = doc.getTextWidth('PERÍODO DE LA PRÁCTICA:');
+  doc.setFont('helvetica', 'normal');
+  let px = margin + perLW + 2;
+  doc.text('INICIO:', px, y);
+  px += doc.getTextWidth('INICIO:') + 1;
+  doc.setLineWidth(0.2);
+  doc.line(px, y, px + 32, y);
+  px += 35;
+  doc.text('FINALIZO:', px, y);
+  px += doc.getTextWidth('FINALIZO:') + 1;
+  doc.line(px, y, px + 32, y);
+  y += rowGap;
+
+  // Row 6: HORAS | COORDINADOR
+  field('No. DE HORAS PRÁCTICAS REALIZADAS:', totalHours, margin, y, halfW);
+  field('COORDINADOR DE LA PRÁCTICA PROFESIONAL:', '', rightX, y, halfW);
+  y += rowGap + 3;
+
+  // ── Evaluation criteria table ─────────────────────────────────────────────
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EVALUACIÓN DEL TRABAJO REALIZADO:', margin, y);
+  y += 5;
+
+  const scoreColW = 10;
+  const descColW = contentWidth - scoreColW * 5;
+  // x positions of the 6 columns: [desc, 1, 2, 3, 4, 5]
+  const colX = [
+    margin,
+    margin + descColW,
+    margin + descColW + scoreColW,
+    margin + descColW + scoreColW * 2,
+    margin + descColW + scoreColW * 3,
+    margin + descColW + scoreColW * 4,
+  ];
+
+  // Header row
+  const thH = 7;
+  doc.setLineWidth(0.3);
+  doc.rect(colX[0], y, descColW, thH);
+  for (let s = 1; s <= 5; s++) {
+    doc.rect(colX[s], y, scoreColW, thH);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(s.toString(), colX[s] + scoreColW / 2, y + 4.8, { align: 'center' });
+  }
+  y += thH;
+
+  const criteria: { label: string; description: string; key: keyof PracticeEvaluation }[] = [
+    {
+      label: 'CALIDAD Y ORGANIZACIÓN DEL TRABAJO REALIZADO',
+      description: 'El Alumno realiza su trabajo con eficiencia y precisión en el desarrollo de sus labores.',
+      key: 'qualityAndOrganization',
+    },
+    {
+      label: 'CONOCIMIENTO Y APLICACIÓN',
+      description:
+        'Mida los conocimientos adquiridos y su consecuente aplicación al trabajo que desarrolla. El alumno domina ampliamente y aplica en forma correcta los conocimientos exigibles a su especialidad y nivel.',
+      key: 'knowledgeAndApplication',
+    },
+    {
+      label: 'CAPACIDAD DE APRENDIZAJE',
+      description:
+        'Califique la rapidez y efectividad con que retiene y aplica los nuevos conocimientos. El alumno aprende con gran facilidad y rapidez.',
+      key: 'learningCapacity',
+    },
+    {
+      label: 'ASISTENCIA Y PUNTUALIDAD',
+      description: 'El Alumno asiste todos los días a su práctica puntualmente.',
+      key: 'attendanceAndPunctuality',
+    },
+    {
+      label: 'INICIATIVA Y CRITERIO',
+      description:
+        'Mida la capacidad para actuar acertadamente en forma autónoma sin instrucciones concretas. El alumno decide y actúa correctamente, investiga para realizar un trabajo óptimo.',
+      key: 'initiativeAndJudgment',
+    },
+  ];
+
+  criteria.forEach((criterion, idx) => {
+    doc.setFontSize(7);
+    const text = `${idx + 1}. ${criterion.label}: ${criterion.description}`;
+    const descLines = doc.splitTextToSize(text, descColW - 3);
+    const rowH = Math.max(descLines.length * 3.6 + 3, 10);
+
+    doc.setLineWidth(0.3);
+    doc.rect(colX[0], y, descColW, rowH);
+    doc.setFont('helvetica', 'normal');
+    doc.text(descLines, colX[0] + 2, y + 3.5);
+
+    const score = evaluation[criterion.key];
+    for (let s = 1; s <= 5; s++) {
+      doc.rect(colX[s], y, scoreColW, rowH);
+      if (s === score) {
+        doc.setFillColor(30, 30, 30);
+        doc.circle(colX[s] + scoreColW / 2, y + rowH / 2, 2.2, 'F');
+        doc.setFillColor(255, 255, 255);
+      }
+    }
+    y += rowH;
+  });
+
+  // Total score row
+  const totalScore =
+    evaluation.qualityAndOrganization +
+    evaluation.knowledgeAndApplication +
+    evaluation.learningCapacity +
+    evaluation.attendanceAndPunctuality +
+    evaluation.initiativeAndJudgment;
+
+  const scoreRowH = 9;
+  doc.setLineWidth(0.3);
+  doc.rect(colX[0], y, descColW, scoreRowH);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.text('PUNTAJE OBTENIDO:', colX[0] + 2, y + 5.8);
+  for (let s = 1; s <= 5; s++) {
+    doc.rect(colX[s], y, scoreColW, scoreRowH);
+  }
+  doc.setFontSize(8.5);
+  doc.text(totalScore.toString(), colX[5] + scoreColW / 2, y + 6, { align: 'center' });
+  y += scoreRowH + 5;
+
+  // ── Supervision question ──────────────────────────────────────────────────
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  const supText =
+    'La siguiente pregunta está enfocada a evaluar la supervisión académica hace de sus alumnos en el período que dura la práctica profesional.';
+  const supLines = doc.splitTextToSize(supText, contentWidth);
+  doc.text(supLines, margin, y);
+  y += supLines.length * 3.8 + 2;
+
+  doc.text('1-  El alumno fue supervisado al interior de la empresa durante el período que duró la práctica profesional por parte de un tutor del ITCA.', margin, y);
+  y += 4.5;
+
+  const visitOptions = [
+    { label: 'Ninguna vez', x: margin + 2 },
+    { label: 'Una visita', x: margin + 38 },
+    { label: 'Dos visitas', x: margin + 72 },
+    { label: 'Tres visitas', x: margin + 108 },
+  ];
+  visitOptions.forEach(({ label, x }) => {
+    doc.setLineWidth(0.3);
+    doc.rect(x, y - 3.2, 4.5, 4.5);
+    doc.text(label, x + 6, y);
+  });
+  y += 5;
+
+  doc.text('Observaciones:', margin, y);
+  doc.setLineWidth(0.2);
+  doc.line(margin + doc.getTextWidth('Observaciones:') + 2, y, pageWidth - margin, y);
+  y += 10;
+
+  // ── Signatures (always on same page) ─────────────────────────────────────
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + 58, y);
+  doc.text('FIRMA DEL TUTOR DE LA EMPRESA', margin, y + 4.5);
+  doc.line(pageWidth - margin - 58, y, pageWidth - margin, y);
+  doc.text('SELLO DE LA EMPRESA', pageWidth - margin - 44, y + 4.5);
+
+  const fileName = `Evaluacion_Practica_Profesional_${studentName.replace(/\s+/g, '_')}.pdf`;
+  doc.save(fileName);
 }
