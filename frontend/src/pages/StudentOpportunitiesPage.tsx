@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import {
   useAvailableOpportunitiesInfinite,
   useCreateApplication,
-  useMyApplications,
 } from '@/hooks/useOpportunities';
 import { useToast } from '@/hooks/useToast';
 import { Card } from '@/components/ui/card';
@@ -31,10 +30,10 @@ import {
   Search,
 } from 'lucide-react';
 import type { Opportunity } from '@/types/opportunity.types';
-import { ApplicationStatusValues } from '@/types/opportunity.types';
 import { formatDate } from '@/utils/date.utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useCareers } from '@/hooks/useCareers';
+import { useHasActivePractice } from '@/hooks/useHasActivePractice';
 import { JobDetailPanel } from '@/components/opportunities/JobDetailPanel';
 import { OpportunitiesListPanel } from '@/components/opportunities/OpportunitiesListPanel';
 import { OpportunityDialogContent } from '@/components/opportunities/OpportunityDialogContent';
@@ -66,19 +65,7 @@ export function StudentOpportunitiesPage() {
   });
 
   const createApplicationMutation = useCreateApplication();
-
-  // Obtener aplicaciones del estudiante para verificar si tiene una aceptada
-  const { data: myApplicationsData } = useMyApplications({
-    page: 1,
-    limit: 100,
-  });
-
-  const hasAcceptedApplication = useMemo(() => {
-    const applications = myApplicationsData?.data || [];
-    return applications.some(
-      (app) => app.status === ApplicationStatusValues.ACCEPTED,
-    );
-  }, [myApplicationsData?.data]);
+  const hasActivePractice = useHasActivePractice();
 
   // Get all opportunities from all pages
   const displayedOpportunities = useMemo(() => {
@@ -111,7 +98,7 @@ export function StudentOpportunitiesPage() {
   }, [displayedOpportunities, selectedOpportunity]);
 
   const handleApply = (opportunity: Opportunity) => {
-    if (hasAcceptedApplication) {
+    if (hasActivePractice) {
       return;
     }
     setSelectedOpportunity(opportunity);
@@ -246,7 +233,7 @@ export function StudentOpportunitiesPage() {
                   opportunity={displayedOpportunity}
                   onApply={() => handleApply(displayedOpportunity)}
                   getTimeAgo={getTimeAgo}
-                  hasAcceptedApplication={hasAcceptedApplication}
+                  hasActivePractice={hasActivePractice}
                   isApplying={createApplicationMutation.isPending}
                 />
               ) : (
@@ -267,17 +254,17 @@ export function StudentOpportunitiesPage() {
             <DialogHeader>
               <DialogTitle className="text-lg sm:text-xl font-semibold">Aplicar a esta oportunidad</DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
-                {hasAcceptedApplication
-                  ? 'Ya tienes una solicitud aceptada. Solo puedes tener una solicitud aceptada a la vez.'
+                {hasActivePractice
+                  ? 'Tienes una práctica en curso. No puedes aplicar mientras tengas una práctica activa.'
                   : 'Completa tu aplicación para esta posición'}
               </DialogDescription>
             </DialogHeader>
 
-            {hasAcceptedApplication && (
+            {hasActivePractice && (
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-4">
                 <p className="text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                  Ya tienes una solicitud aceptada. Solo puedes tener una solicitud aceptada a la vez.
+                  Tienes una práctica en curso. No puedes aplicar mientras tengas una práctica activa.
                 </p>
               </div>
             )}
@@ -287,7 +274,7 @@ export function StudentOpportunitiesPage() {
                 opportunity={selectedOpportunity}
                 coverLetter={coverLetter}
                 setCoverLetter={setCoverLetter}
-                disabled={hasAcceptedApplication}
+                disabled={hasActivePractice}
               />
             )}
 
@@ -302,7 +289,7 @@ export function StudentOpportunitiesPage() {
               </Button>
               <Button
                 onClick={handleSubmitApplication}
-                disabled={createApplicationMutation.isPending || hasAcceptedApplication}
+                disabled={createApplicationMutation.isPending || hasActivePractice}
                 className="flex-1 sm:flex-initial bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {createApplicationMutation.isPending ? (

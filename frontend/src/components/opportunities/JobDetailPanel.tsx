@@ -25,7 +25,7 @@ interface JobDetailPanelProps {
   onApply: () => void;
   getTimeAgo: (date: string) => string;
   hideAppliedMessage?: boolean;
-  hasAcceptedApplication?: boolean;
+  hasActivePractice?: boolean;
   isApplying?: boolean;
 }
 
@@ -34,7 +34,7 @@ export function JobDetailPanel({
   onApply,
   getTimeAgo,
   hideAppliedMessage = false,
-  hasAcceptedApplication = false,
+  hasActivePractice = false,
   isApplying = false,
 }: JobDetailPanelProps) {
   const [imageError, setImageError] = useState(false);
@@ -133,7 +133,7 @@ export function JobDetailPanel({
                 onClick={handleToggleSave}
                 disabled={
                   opportunity.hasApplied ||
-                  hasAcceptedApplication ||
+                  hasActivePractice ||
                   saveMutation.isPending ||
                   unsaveMutation.isPending
                 }
@@ -141,8 +141,8 @@ export function JobDetailPanel({
                 title={
                   opportunity.hasApplied
                     ? 'No puedes guardar una oportunidad a la que ya aplicaste'
-                    : hasAcceptedApplication
-                    ? 'No puedes guardar oportunidades si ya tienes una solicitud aceptada'
+                    : hasActivePractice
+                    ? 'No puedes guardar oportunidades si tienes una práctica en curso'
                     : undefined
                 }
               >
@@ -187,11 +187,11 @@ export function JobDetailPanel({
               </div>
             )}
 
-            {hasAcceptedApplication && !opportunity.hasApplied && (
+            {hasActivePractice && !opportunity.hasApplied && (
               <div className="mt-3 sm:mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                 <p className="text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                  Ya tienes una solicitud aceptada. Solo puedes tener una solicitud aceptada a la vez.
+                  Tienes una práctica en curso. No puedes aplicar a nuevas oportunidades mientras tengas una práctica activa.
                 </p>
               </div>
             )}
@@ -199,7 +199,7 @@ export function JobDetailPanel({
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3 sm:mt-4">
               <Button
                 onClick={onApply}
-                disabled={opportunity.hasApplied || hasAcceptedApplication || isApplying}
+                disabled={opportunity.hasApplied || hasActivePractice || isApplying}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full sm:w-auto sm:flex-initial text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isApplying ? (
@@ -212,10 +212,10 @@ export function JobDetailPanel({
                     <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                     Ya aplicaste
                   </>
-                ) : hasAcceptedApplication ? (
+                ) : hasActivePractice ? (
                   <>
                     <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                    Ya tienes una solicitud aceptada
+                    Práctica en curso
                   </>
                 ) : (
                   <>
@@ -229,7 +229,7 @@ export function JobDetailPanel({
                 onClick={handleToggleSave}
                 disabled={
                   opportunity.hasApplied ||
-                  hasAcceptedApplication ||
+                  hasActivePractice ||
                   saveMutation.isPending ||
                   unsaveMutation.isPending
                 }
