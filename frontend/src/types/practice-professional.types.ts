@@ -74,6 +74,7 @@ export interface PracticeProfessional {
   totalHours: number;
   approvedHours: number;
   status: PracticeStatus;
+  finalizedAt?: string;
 }
 
 export interface ActivitiesResponse {

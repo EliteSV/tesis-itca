@@ -92,10 +92,12 @@ export function StudentTable({
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <TableCheckboxCell
-                    isSelected={selectedIds.has(student._id)}
-                    onToggle={() => onToggleSelect(student._id)}
-                  />
+                  {!isReadOnly && (
+                    <TableCheckboxCell
+                      isSelected={selectedIds.has(student._id)}
+                      onToggle={() => onToggleSelect(student._id)}
+                    />
+                  )}
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 min-w-[150px] sm:min-w-[180px]">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">

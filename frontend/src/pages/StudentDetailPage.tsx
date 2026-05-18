@@ -65,14 +65,14 @@ export function StudentDetailPage() {
     });
   const updateStatusMutation = useUpdateActivityStatus();
   const finishPracticeMutation = useFinishPracticeProfessional();
-
   const student = studentDetail?.student;
   const application = studentDetail?.application;
   const opportunity = studentDetail?.opportunity;
+  const practiceProfessional = studentDetail?.practiceProfessional;
   const activities = activitiesData?.data || [];
   const totalActivitiesPages = activitiesData?.totalPages || 0;
 
-  const isFinalized = application?.finalizedAt ? true : false;
+  const isFinalized = practiceProfessional?.finalizedAt ? true : false;
 
   // Get approved hours from studentDetail (calculated in backend)
   const approvedHours = studentDetail?.approvedHours || 0;

@@ -198,7 +198,7 @@ function App() {
           <Route
             path="/estudiantes/:id/admin"
             element={
-              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN,UserRole.COORDINADOR]}>
                 <MainLayout>
                   <Suspense fallback={<LoadingFallback />}>
                     <AdminStudentDetailPage />

@@ -212,6 +212,7 @@ export function useStudentsWithApplications(params?: {
     ],
     queryFn: () => opportunitiesApi.getStudentsWithApplications(params),
     staleTime: 2 * 60 * 1000,
+    enabled: !!params,
   });
 }
 

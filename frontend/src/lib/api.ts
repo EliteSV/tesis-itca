@@ -773,6 +773,7 @@ export const practiceProfessionalApi = {
     student: import('@/types/student.types').Student;
     application: import('@/types/opportunity.types').Application;
     opportunity: import('@/types/opportunity.types').Opportunity;
+    practiceProfessional: import('@/types/practice-professional.types').PracticeProfessional;
     approvedHours: number;
   }> => {
     const response = await api.get(
