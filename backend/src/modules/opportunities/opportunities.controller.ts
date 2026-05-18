@@ -543,52 +543,6 @@ export class OpportunitiesController {
     return this.opportunitiesService.remove(id, req.user.id);
   }
 
-  @Get('students/with-applications')
-  @Roles(UserRole.COMPANY)
-  @ApiOperation({
-    summary: 'Obtener estudiantes con aplicaciones aceptadas a oportunidades',
-    description:
-      'Retorna un listado de estudiantes que han sido aceptados en oportunidades. Si el usuario es COMPANY, muestra solo estudiantes de su empresa. Si es ADMIN, muestra todos los estudiantes con aplicaciones aceptadas.',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Número de página',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Cantidad de elementos por página',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Búsqueda por nombre, email o número de identificación',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de estudiantes obtenida exitosamente',
-  })
-  getStudentsWithApplications(
-    @Request() req: { user: { id: string; role: string } },
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.opportunitiesService.getStudentsWithApplications(
-      req.user.id,
-      req.user.role,
-      pageNum,
-      limitNum,
-      search,
-    );
-  }
-
   @Post('applications')
   @Roles(UserRole.ESTUDIANTE)
   @ApiOperation({
