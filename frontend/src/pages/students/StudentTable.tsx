@@ -8,6 +8,28 @@ import {
 } from '@/components/ui/table-components';
 import type { StudentTableProps } from '@/pages/students/Students.types';
 
+function getPracticeStatusBadge(status: string | null | undefined) {
+  if (!status) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium rounded-lg border bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+        Sin práctica
+      </span>
+    );
+  }
+  const isEnCurso = status === 'en_curso';
+  const colorClass = isEnCurso
+    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+    : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+  const label = isEnCurso ? 'En Curso' : 'Finalizada';
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium rounded-lg border transition-all duration-200 ${colorClass}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {label}
+    </span>
+  );
+}
+
 export function StudentTable({
   students,
   selectedIds,
@@ -65,7 +87,7 @@ export function StudentTable({
                   Carrera
                 </th>
                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[120px]">
-                  Estado
+                  {isReadOnly ? 'Práctica' : 'Estado'}
                 </th>
                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell min-w-[100px]">
                   <TableSortButton
@@ -124,7 +146,9 @@ export function StudentTable({
                     </p>
                   </td>
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap min-w-[120px]">
-                    {getStatusBadge(student.status, student.isActive)}
+                    {isReadOnly
+                      ? getPracticeStatusBadge(student.practiceStatus)
+                      : getStatusBadge(student.status, student.isActive)}
                   </td>
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap hidden sm:table-cell min-w-[100px]">
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -212,7 +236,9 @@ export function StudentTable({
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 relative">
-                {getStatusBadge(student.status, student.isActive)}
+                {isReadOnly
+                  ? getPracticeStatusBadge(student.practiceStatus)
+                  : getStatusBadge(student.status, student.isActive)}
                 {!isReadOnly ? (
                   <TableActionsDropdownMobile
                     itemId={student._id}

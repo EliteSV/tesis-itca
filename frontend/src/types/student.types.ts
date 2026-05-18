@@ -79,6 +79,7 @@ export interface Student {
   status: StudentStatus;
   userId: string;
   isActive: boolean;
+  practiceStatus?: string | null;
   socialServiceDocument?: {
     fileData?: string;
     fileName: string;

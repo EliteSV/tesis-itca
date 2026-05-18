@@ -252,15 +252,19 @@ export class StudentsService {
   ) {
     const skip = (page - 1) * limit;
 
+    const companyObjectId = new Types.ObjectId(companyId);
+
     const practices = await this.practiceProfessionalModel
-      .find({ companyId: new Types.ObjectId(companyId) })
-      .select('studentId')
+      .find({ companyId: companyObjectId })
+      .select('studentId status')
       .lean()
       .exec();
 
-    const userIds = [
-      ...new Set(practices.map((p) => p.studentId.toString())),
-    ].map((id) => new Types.ObjectId(id));
+    const practiceMap = new Map(
+      practices.map((p) => [p.studentId.toString(), p.status]),
+    );
+
+    const userIds = [...practiceMap.keys()].map((id) => new Types.ObjectId(id));
 
     if (userIds.length === 0) {
       return { data: [], total: 0, page, limit, totalPages: 0 };
@@ -292,9 +296,13 @@ export class StudentsService {
       this.studentModel.countDocuments(query).exec(),
     ]);
 
-    const transformedData = data.map((student) =>
-      this.transformStudentWithCareer(student as Record<string, unknown>),
-    );
+    const transformedData = data.map((student) => {
+      const transformed = this.transformStudentWithCareer(
+        student as Record<string, unknown>,
+      );
+      const practiceStatus = practiceMap.get(student.userId.toString()) ?? null;
+      return { ...transformed, practiceStatus };
+    });
 
     return {
       data: transformedData,
