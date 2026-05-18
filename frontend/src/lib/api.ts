@@ -847,12 +847,12 @@ export const practiceProfessionalApi = {
     >('/practice-professional/history');
     return response.data;
   },
-  getPracticeProfessionalByApplicationId: async (
-    applicationId: string,
+  getPracticeProfessionalById: async (
+    practiceId: string,
   ): Promise<import('@/types/practice-professional.types').PracticeProfessional> => {
     const response = await api.get<
       import('@/types/practice-professional.types').PracticeProfessional
-    >(`/practice-professional/history/${applicationId}`);
+    >(`/practice-professional/history/${practiceId}`);
     return response.data;
   },
   getHolidays: async (year?: number): Promise<string[]> => {

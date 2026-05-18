@@ -213,13 +213,13 @@ export function usePracticeHistory() {
   });
 }
 
-export function usePracticeProfessionalByApplicationId(
-  applicationId: string | null,
+export function usePracticeProfessionalById(
+  practiceId: string | null,
 ) {
   return useQuery<PracticeProfessional>({
-    queryKey: ['practice-professional', 'history', applicationId],
-    queryFn: () => practiceProfessionalApi.getPracticeProfessionalByApplicationId(applicationId!),
-    enabled: !!applicationId,
+    queryKey: ['practice-professional', 'history', practiceId],
+    queryFn: () => practiceProfessionalApi.getPracticeProfessionalById(practiceId!),
+    enabled: !!practiceId,
     staleTime: 2 * 60 * 1000,
     retry: (failureCount, error: unknown) => {
       if ((error as { response?: { status?: number } })?.response?.status === 404) {

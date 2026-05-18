@@ -322,30 +322,10 @@ export function MyPracticeProfessionalPage() {
             Gestiona tus actividades y horas de práctica profesional
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleExportPDF}
-            variant="outline"
-            className="gap-2"
-            disabled={isGeneratingPDF || !practiceData}
-          >
-            {isGeneratingPDF ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Generando...
-              </>
-            ) : (
-              <>
-                <FileText className="h-4 w-4" />
-                Exportar PDF
-              </>
-            )}
-          </Button>
-          <Button onClick={handleOpenCreateDialog} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nueva Actividad
-          </Button>
-        </div>
+        <Button onClick={handleOpenCreateDialog} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nueva Actividad
+        </Button>
       </div>
 
       {/* Opportunity Details */}
@@ -474,6 +454,24 @@ export function MyPracticeProfessionalPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Actividades
           </h2>
+          <Button
+            onClick={handleExportPDF}
+            variant="outline"
+            className="gap-2"
+            disabled={isGeneratingPDF || !practiceData}
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generando...
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Exportar PDF
+              </>
+            )}
+          </Button>
         </div>
 
         {isLoadingActivities ? (

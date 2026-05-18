@@ -4,6 +4,12 @@ export { PracticeStatus };
 
 export class PracticeHistoryItemDto {
   @ApiProperty({
+    description: 'ID de la práctica profesional',
+    example: '507f1f77bcf86cd799439010',
+  })
+  practiceId: string;
+
+  @ApiProperty({
     description: 'ID de la aplicación',
     example: '507f1f77bcf86cd799439011',
   })

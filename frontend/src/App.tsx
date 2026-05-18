@@ -316,7 +316,7 @@ function App() {
             }
           />
           <Route
-            path="/historial-practicas/:applicationId"
+            path="/historial-practicas/:practiceId"
             element={
               <ProtectedRoute allowedRoles={[UserRole.ESTUDIANTE]}>
                 <MainLayout>

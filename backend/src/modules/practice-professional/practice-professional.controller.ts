@@ -138,7 +138,7 @@ export class PracticeProfessionalController {
     return this.practiceProfessionalService.getPracticeHistory(req.user.id);
   }
 
-  @Get('history/:applicationId')
+  @Get('history/:practiceId')
   @ApiOperation({
     summary: 'Obtener detalle de una práctica profesional específica',
     description:
@@ -153,12 +153,12 @@ export class PracticeProfessionalController {
     status: 404,
     description: 'Práctica profesional no encontrada',
   })
-  async getPracticeProfessionalByApplicationId(
+  async getPracticeProfessionalById(
     @Request() req: { user: { id: string } },
-    @Param('applicationId') applicationId: string,
+    @Param('practiceId') practiceId: string,
   ): Promise<PracticeProfessionalResponseDto> {
-    return this.practiceProfessionalService.getPracticeProfessionalByApplicationId(
-      applicationId,
+    return this.practiceProfessionalService.getPracticeProfessionalById(
+      practiceId,
       req.user.id,
     );
   }

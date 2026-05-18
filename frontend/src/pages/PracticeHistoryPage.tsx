@@ -105,9 +105,9 @@ export function PracticeHistoryPage() {
       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
         {practices.map((practice: PracticeHistoryItem) => (
           <Card
-            key={practice.applicationId}
+            key={practice.practiceId}
             className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate(`/historial-practicas/${practice.applicationId}`)}
+            onClick={() => navigate(`/historial-practicas/${practice.practiceId}`)}
           >
             <div className="flex items-start gap-4 mb-4">
               {practice.companyLogo ? (

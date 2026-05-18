@@ -30,6 +30,14 @@ export interface CreateActivityDto {
   equipmentOrTool: string;
 }
 
+export interface PracticeEvaluation {
+  qualityAndOrganization: number;
+  knowledgeAndApplication: number;
+  learningCapacity: number;
+  attendanceAndPunctuality: number;
+  initiativeAndJudgment: number;
+}
+
 export interface PracticeProfessional {
   application: {
     _id: string;
@@ -75,6 +83,7 @@ export interface PracticeProfessional {
   approvedHours: number;
   status: PracticeStatus;
   finalizedAt?: string;
+  practiceEvaluation?: PracticeEvaluation;
 }
 
 export interface ActivitiesResponse {
@@ -93,6 +102,7 @@ export const PracticeStatus = {
 export type PracticeStatus = (typeof PracticeStatus)[keyof typeof PracticeStatus];
 
 export interface PracticeHistoryItem {
+  practiceId: string;
   applicationId: string;
   opportunityId: string;
   opportunityTitle: string;

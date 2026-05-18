@@ -766,6 +766,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
         const companyLogo = opportunity.company?.logo;
 
         return {
+          practiceId: practice._id.toString(),
           applicationId: practice.applicationId.toString(),
           opportunityId: opportunity._id.toString(),
           opportunityTitle: opportunity.title || 'Sin título',
@@ -784,13 +785,13 @@ No incluyas ningún texto adicional, solo el JSON.`;
     return { data: historyItems, total: historyItems.length };
   }
 
-  async getPracticeProfessionalByApplicationId(
-    applicationId: string,
+  async getPracticeProfessionalById(
+    practiceId: string,
     userId: string,
   ): Promise<PracticeProfessionalResponseDto> {
     const practice = await this.practiceProfessionalModel
       .findOne({
-        applicationId: new Types.ObjectId(applicationId),
+        _id: new Types.ObjectId(practiceId),
         studentId: new Types.ObjectId(userId),
       })
       .populate({
@@ -838,6 +839,7 @@ No incluyas ningún texto adicional, solo el JSON.`;
       totalHours,
       approvedHours,
       status: practice.status,
+      practiceEvaluation: practice.practiceEvaluation,
     };
   }
 }

@@ -1,8 +1,25 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApplicationResponseDto } from '@/modules/opportunities/dto/application-response.dto';
 import { OpportunityResponseDto } from '@/modules/opportunities/dto/opportunity-response.dto';
 import { ActivityResponseDto } from './activity-response.dto';
 import { PracticeStatus } from './practice-history-item.dto';
+
+export class PracticeEvaluationResponseDto {
+  @ApiProperty({ example: 4 })
+  qualityAndOrganization: number;
+
+  @ApiProperty({ example: 4 })
+  knowledgeAndApplication: number;
+
+  @ApiProperty({ example: 4 })
+  learningCapacity: number;
+
+  @ApiProperty({ example: 4 })
+  attendanceAndPunctuality: number;
+
+  @ApiProperty({ example: 4 })
+  initiativeAndJudgment: number;
+}
 
 export class PracticeProfessionalResponseDto {
   @ApiProperty({
@@ -41,4 +58,10 @@ export class PracticeProfessionalResponseDto {
     example: PracticeStatus.EN_CURSO,
   })
   status: PracticeStatus;
+
+  @ApiPropertyOptional({
+    description: 'Evaluación final de la práctica profesional',
+    type: PracticeEvaluationResponseDto,
+  })
+  practiceEvaluation?: PracticeEvaluationResponseDto;
 }
