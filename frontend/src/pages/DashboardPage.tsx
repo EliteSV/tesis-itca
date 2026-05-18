@@ -789,7 +789,7 @@ function AdminDashboard({
       icon: Clock,
       color: 'text-yellow-600 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-950',
-      variant: 'outline' as const,
+      badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
     },
     {
       label: 'En Proceso',
@@ -797,7 +797,7 @@ function AdminDashboard({
       icon: PlayCircle,
       color: 'text-blue-600 dark:text-blue-400',
       bgColor: 'bg-blue-50 dark:bg-blue-950',
-      variant: 'default' as const,
+      badgeClass: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
     },
     {
       label: 'Aprobadas',
@@ -805,7 +805,7 @@ function AdminDashboard({
       icon: CheckCircle2,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-950',
-      variant: 'default' as const,
+      badgeClass: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
     },
     {
       label: 'Rechazadas',
@@ -813,7 +813,7 @@ function AdminDashboard({
       icon: XCircle,
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-950',
-      variant: 'destructive' as const,
+      badgeClass: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
     },
   ];
 
@@ -880,7 +880,7 @@ function AdminDashboard({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold">{stat.value}</span>
-                        <Badge variant={stat.variant} className="text-xs">
+                        <Badge variant="outline" className={`text-xs ${stat.badgeClass}`}>
                           {percentage}%
                         </Badge>
                       </div>
