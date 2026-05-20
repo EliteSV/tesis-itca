@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Plus, GraduationCap, Download, Copy, Check } from 'lucide-react';
+import { Plus, GraduationCap, Download, FileText, Copy, Check } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatDate } from '@/utils/date.utils';
@@ -533,6 +535,108 @@ export function StudentsPage() {
     toast.success('Exportación completada', 'Los datos se han exportado correctamente.');
   }, [students, toast]);
 
+  const handleExportPDF = useCallback(async () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Cargar logo ITCA
+    const logoUrl = '/assets/logo-itca-white.png';
+    await new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        // Encabezado rojo ITCA (#B1291D)
+        doc.setFillColor(177, 41, 29);
+        doc.rect(0, 0, pageWidth, 64, 'F');
+
+        // Logo: mantener proporción 592×65, altura 32pt → ancho ≈ 291pt
+        const logoH = 32;
+        const logoW = (592 / 65) * logoH;
+        doc.addImage(img, 'PNG', pageWidth - logoW - 32, 12, logoW, logoH);
+
+        resolve();
+      };
+      img.onerror = () => resolve(); // si falla, continuar sin logo
+      img.src = logoUrl;
+    });
+
+    // Si el logo no cargó, igual dibujar el encabezado
+    if (!doc.getNumberOfPages()) {
+      doc.setFillColor(177, 41, 29);
+      doc.rect(0, 0, pageWidth, 64, 'F');
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Lista de Estudiantes', 32, 30);
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+      `Generado: ${new Date().toLocaleDateString('es-HN', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+      32,
+      46,
+    );
+    doc.text(
+      `Total: ${students.length} estudiante${students.length !== 1 ? 's' : ''}`,
+      32,
+      58,
+    );
+
+    const practiceLabel = (status: string | null | undefined) => {
+      if (!status) return 'Sin práctica';
+      return status === 'en_curso' ? 'En Curso' : 'Finalizada';
+    };
+
+    const rows = students.map((s) => [
+      `${s.firstName} ${s.lastName}`,
+      s.email,
+      s.identificationNumber,
+      s.career?.name || '-',
+      s.status,
+      practiceLabel(s.practiceStatus),
+      formatDate(s.createdAt),
+    ]);
+
+    autoTable(doc, {
+      startY: 76,
+      head: [['Nombre Completo', 'Email', 'Identificación', 'Carrera', 'Estado', 'Práctica', 'Creado']],
+      body: rows,
+      styles: {
+        fontSize: 8,
+        cellPadding: { top: 6, right: 8, bottom: 6, left: 8 },
+        overflow: 'linebreak',
+        textColor: [30, 41, 59],
+      },
+      headStyles: {
+        fillColor: [241, 245, 249],
+        textColor: [71, 85, 105],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'left',
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { cellWidth: 120 },
+        1: { cellWidth: 140 },
+        2: { cellWidth: 90 },
+        3: { cellWidth: 100 },
+        4: { cellWidth: 80 },
+        5: { cellWidth: 70 },
+        6: { cellWidth: 70 },
+      },
+      tableLineColor: [226, 232, 240],
+      tableLineWidth: 0.5,
+      margin: { left: 32, right: 32 },
+    });
+
+    doc.save('estudiantes.pdf');
+    toast.success('PDF generado', 'La lista de estudiantes ha sido exportada en PDF.');
+  }, [students, toast]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
@@ -580,6 +684,18 @@ export function StudentsPage() {
                 >
                   <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Exportar</span>
+                </Button>
+              </Tooltip>
+              <Tooltip content="Exportar a PDF">
+                <Button
+                  onClick={handleExportPDF}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 sm:gap-2 transition-all duration-200 hover:scale-105 active:scale-95 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  aria-label="Exportar datos a PDF"
+                >
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Exportar PDF</span>
                 </Button>
               </Tooltip>
               <Tooltip content="Nuevo estudiante (Ctrl+N)">

@@ -62,7 +62,10 @@ export function StudentTable({
                     className="text-left"
                   />
                 )}
-                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider min-w-[150px] sm:min-w-[180px]">
+                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider min-w-[120px]">
+                  Identificación
+                </th>
+                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider min-w-[150px] sm:min-w-[180px]">
                   <TableSortButton
                     field="firstName"
                     label="Nombre Completo"
@@ -71,7 +74,7 @@ export function StudentTable({
                     onSort={onSort}
                   />
                 </th>
-                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell min-w-[150px]">
+                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider hidden md:table-cell min-w-[150px]">
                   <TableSortButton
                     field="email"
                     label="Email"
@@ -80,22 +83,19 @@ export function StudentTable({
                     onSort={onSort}
                   />
                 </th>
-                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider min-w-[120px]">
-                  Identificación
-                </th>
-                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell min-w-[150px]">
+                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider hidden lg:table-cell min-w-[150px]">
                   Carrera
                 </th>
-                
+
                 {!isReadOnly && (
-                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[120px]">
+                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider whitespace-nowrap min-w-[120px]">
                   Estado
                 </th>
                 )}
-                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap min-w-[120px]">
+                 <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider whitespace-nowrap min-w-[120px]">
                     Práctica
                   </th>
-                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell min-w-[100px]">
+                <th className="text-left py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider whitespace-nowrap hidden sm:table-cell min-w-[100px]">
                   <TableSortButton
                     field="createdAt"
                     label="Creado"
@@ -104,7 +104,7 @@ export function StudentTable({
                     onSort={onSort}
                   />
                 </th>
-                <th className="text-right py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky right-0 bg-white dark:bg-slate-900 z-30 w-16 sm:w-20 md:w-24 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-slate-200 dark:before:bg-slate-700">
+                <th className="text-right py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider sticky right-0 bg-white dark:bg-slate-900 z-30 w-16 sm:w-20 md:w-24 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-slate-200 dark:before:bg-slate-700">
                   Acciones
                 </th>
               </tr>
@@ -126,6 +126,11 @@ export function StudentTable({
                       onToggle={() => onToggleSelect(student._id)}
                     />
                   )}
+                  <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap min-w-[120px]">
+                    <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {student.identificationNumber}
+                    </p>
+                  </td>
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 min-w-[150px] sm:min-w-[180px]">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
@@ -139,11 +144,6 @@ export function StudentTable({
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 hidden md:table-cell min-w-[150px]">
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 truncate">
                       {student.email}
-                    </p>
-                  </td>
-                  <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 whitespace-nowrap min-w-[120px]">
-                    <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {student.identificationNumber}
                     </p>
                   </td>
                   <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 hidden lg:table-cell min-w-[150px]">
