@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Search, GraduationCap, Users, Building2, Download } from 'lucide-react';
+import { Briefcase, Search, GraduationCap, Users, Building2, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import { useOpportunitiesForAdmin, useToggleOpportunityActiveStatusForAdmin } fr
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToastContext } from '@/contexts/ToastContext';
 import { formatDate } from '@/utils/date.utils';
-import { exportToCSV } from '@/utils/export.utils';
+import { exportToExcel } from '@/utils/export.utils';
 import { OpportunityFilters, type OpportunityFilters as OpportunityFiltersType } from '@/pages/opportunities/OpportunityFilters';
 import { Pagination } from '@/pages/career-categories/Pagination';
 import { OpportunityFormDialog } from '@/components/opportunities/OpportunityFormDialog';
@@ -172,7 +172,7 @@ export function AdminOpportunitiesPage() {
       'Fecha de Creación': formatDate(opportunity.createdAt),
       'Fecha de Actualización': formatDate(opportunity.updatedAt),
     }));
-    exportToCSV(exportData, 'oportunidades', {
+    exportToExcel(exportData, 'oportunidades', {
       Título: 'Título',
       Empresa: 'Empresa',
       Carrera: 'Carrera',
@@ -206,15 +206,15 @@ export function AdminOpportunitiesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Tooltip content="Exportar a CSV">
+            <Tooltip content="Exportar a Excel">
               <Button
                 onClick={handleExport}
                 variant="outline"
                 size="sm"
                 className="gap-1.5 sm:gap-2 transition-all duration-200 hover:scale-105 active:scale-95 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                aria-label="Exportar datos a CSV"
+                aria-label="Exportar datos a Excel"
               >
-                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Exportar</span>
               </Button>
             </Tooltip>
