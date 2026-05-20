@@ -11,10 +11,9 @@ import type { Opportunity } from '@/types/opportunity.types';
 
 interface CompanyInfoSectionProps {
   opportunity: Opportunity;
-  baseUrl?: string;
 }
 
-export function CompanyInfoSection({ opportunity, baseUrl = '' }: CompanyInfoSectionProps) {
+export function CompanyInfoSection({ opportunity }: CompanyInfoSectionProps) {
   // Always show the section, even if company data is incomplete
   const company = opportunity.company;
   const responsibleUser = opportunity.responsibleUser;
@@ -42,7 +41,7 @@ export function CompanyInfoSection({ opportunity, baseUrl = '' }: CompanyInfoSec
               <>
                 <img
                   key={`company-logo-${company._id}-${company.logo}`}
-                  src={`${baseUrl}${company.logo}`}
+                  src={company.logo}
                   alt={company.name || 'Company logo'}
                   className="w-full h-full rounded-lg object-contain border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1"
                   onLoad={() => {

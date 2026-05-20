@@ -70,7 +70,6 @@ export function CompanyFormDialog({
   const isEditing = !!company;
   const createMutation = useCreateCompany();
   const updateMutation = useUpdateCompany();
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const {
@@ -136,13 +135,7 @@ export function CompanyFormDialog({
         });
         // Use setTimeout to avoid calling setState synchronously in effect
         setTimeout(() => {
-          if (company.logo) {
-            const baseUrl =
-              import.meta.env.VITE_API_URL || 'http://localhost:3000';
-            setLogoPreview(`${baseUrl}${company.logo}`);
-          } else {
-            setLogoPreview(null);
-          }
+          setLogoPreview(company.logo || null);
         }, 0);
       } else {
         reset({
@@ -164,10 +157,6 @@ export function CompanyFormDialog({
           setLogoPreview(null);
         }, 0);
       }
-      // Use setTimeout to avoid calling setState synchronously in effect
-      setTimeout(() => {
-        setLogoFile(null);
-      }, 0);
     }
   }, [open, company, reset]);
 
@@ -183,7 +172,6 @@ export function CompanyFormDialog({
           alert('El archivo no debe exceder 5MB');
           return;
         }
-        setLogoFile(file);
         const reader = new FileReader();
         reader.onloadend = () => {
           setLogoPreview(reader.result as string);
@@ -195,13 +183,7 @@ export function CompanyFormDialog({
   );
 
   const handleRemoveLogo = useCallback(() => {
-    setLogoFile(null);
-    setLogoPreview(null);
-    if (company?.logo) {
-      const baseUrl =
-        import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      setLogoPreview(`${baseUrl}${company.logo}`);
-    }
+    setLogoPreview(company?.logo || null);
   }, [company]);
 
   const onSubmit = useCallback(
@@ -216,6 +198,7 @@ export function CompanyFormDialog({
           sector: data.sector || undefined,
           description: data.description || undefined,
           status: data.status,
+          logo: logoPreview || undefined,
         };
 
         if (data.createUser && !isEditing) {
@@ -230,13 +213,9 @@ export function CompanyFormDialog({
           await updateMutation.mutateAsync({
             id: company._id,
             data: companyData,
-            logoFile: logoFile || undefined,
           });
         } else {
-          await createMutation.mutateAsync({
-            data: companyData,
-            logoFile: logoFile || undefined,
-          });
+          await createMutation.mutateAsync(companyData);
         }
 
         onOpenChange(false);
@@ -252,7 +231,7 @@ export function CompanyFormDialog({
       updateMutation,
       onOpenChange,
       onSuccess,
-      logoFile,
+      logoPreview,
     ],
   );
 
@@ -390,7 +369,7 @@ export function CompanyFormDialog({
                     alt="Logo preview"
                     className="h-20 w-20 object-contain border border-slate-200 dark:border-slate-700 rounded-lg"
                   />
-                  {logoFile && (
+                  {logoPreview !== (company?.logo || null) && (
                     <button
                       type="button"
                       onClick={handleRemoveLogo}

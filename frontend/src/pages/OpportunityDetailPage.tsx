@@ -84,19 +84,15 @@ export function OpportunityDetailPage() {
   const updateStatusMutation = useUpdateApplicationStatus();
   const toggleActiveMutation = useToggleOpportunityActiveStatus();
   const toast = useToastContext();
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
   // Debug: Log opportunity data
   useEffect(() => {
     if (opportunity) {
       console.log('Opportunity data:', {
         company: opportunity.company,
         companyLogo: opportunity.company?.logo,
-        baseUrl,
-        fullUrl: opportunity.company?.logo ? `${baseUrl}${opportunity.company.logo}` : 'No logo'
       });
     }
-  }, [opportunity, baseUrl]);
+  }, [opportunity]);
 
   // Log error for debugging
   useEffect(() => {
@@ -360,7 +356,6 @@ export function OpportunityDetailPage() {
             {/* Opportunity Header Card */}
             <OpportunityHeaderCard
               opportunity={opportunity}
-              baseUrl={baseUrl}
               onToggleActive={handleToggleActive}
               isToggling={toggleActiveMutation.isPending}
               acceptedCount={acceptedCount}
@@ -376,7 +371,6 @@ export function OpportunityDetailPage() {
             {activeTab === 'detail' && (
               <OpportunityDetailTab
                 opportunity={opportunity}
-                baseUrl={baseUrl}
                 acceptedCount={acceptedCount}
                 pendingCount={pendingCount}
                 rejectedCount={rejectedCount}

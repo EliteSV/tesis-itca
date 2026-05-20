@@ -36,6 +36,7 @@ export interface CreateCompanyDto {
   sector?: string;
   description?: string;
   status?: CompanyStatus;
+  logo?: string;
   initialUser?: CreateInitialUserDto;
 }
 

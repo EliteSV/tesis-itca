@@ -63,8 +63,6 @@ export function AdminOpportunityDetailPage() {
   const { data: viewingStudent, isLoading: isLoadingStudent } = useStudent(
     validStudentId,
   );
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
   const capitalizeFirst = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
@@ -209,7 +207,6 @@ export function AdminOpportunityDetailPage() {
             <div className="space-y-4 sm:space-y-6">
               <OpportunityHeaderCard
                 opportunity={opportunity}
-                baseUrl={baseUrl}
                 onToggleActive={handleToggleActive}
                 isToggling={isToggling}
                 acceptedCount={acceptedCount}
@@ -223,7 +220,7 @@ export function AdminOpportunityDetailPage() {
                 rejectedCount={rejectedCount}
               />
 
-              <CompanyInfoSection opportunity={opportunity} baseUrl={baseUrl} />
+              <CompanyInfoSection opportunity={opportunity} />
 
               <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm">
                 <CardHeader>

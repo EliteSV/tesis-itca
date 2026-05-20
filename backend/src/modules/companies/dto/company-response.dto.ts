@@ -63,6 +63,13 @@ export class CompanyResponseDto {
   status: CompanyStatus;
 
   @ApiProperty({
+    description: 'Logo de la empresa en formato Base64 (data URL)',
+    example: 'data:image/png;base64,...',
+    required: false,
+  })
+  logo?: string;
+
+  @ApiProperty({
     description: 'Indica si la empresa está activa',
     example: true,
   })

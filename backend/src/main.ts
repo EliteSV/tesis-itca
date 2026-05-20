@@ -3,7 +3,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { AppModule } from '@/app.module';
 
 async function bootstrap() {
@@ -38,16 +37,6 @@ async function bootstrap() {
       'X-Requested-With',
     ],
     exposedHeaders: ['Content-Type', 'Authorization'],
-  });
-
-  const uploadsPath = join(__dirname, '..', 'uploads', 'logos');
-  app.useStaticAssets(uploadsPath, {
-    prefix: '/uploads/logos',
-  });
-
-  const documentsPath = join(__dirname, '..', 'uploads', 'documents');
-  app.useStaticAssets(documentsPath, {
-    prefix: '/uploads/documents',
   });
 
   const config = new DocumentBuilder()

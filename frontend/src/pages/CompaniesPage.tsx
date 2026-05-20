@@ -80,16 +80,18 @@ function CompanyDetailsContent({
     company._id,
   );
 
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
   return (
     <div className="grid gap-4 py-4">
       {company.logo && (
         <div className="flex justify-center">
           <img
-            src={`${baseUrl}${company.logo}`}
+            src={company.logo}
             alt={`Logo de ${company.name}`}
             className="h-32 w-32 object-contain border border-slate-200 dark:border-slate-700 rounded-lg"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
           />
         </div>
       )}
@@ -555,8 +557,6 @@ export function CompaniesPage() {
                       </tr>
                     ) : (
                       data?.data.map((company, index) => {
-                        const baseUrl =
-                          import.meta.env.VITE_API_URL || 'http://localhost:3000';
                         return (
                           <tr
                             key={company._id}
@@ -565,11 +565,22 @@ export function CompaniesPage() {
                           >
                             <td className="py-2 sm:py-3 md:py-4 px-1.5 sm:px-2 md:px-4 min-w-[80px]">
                               {company.logo ? (
-                                <img
-                                  src={`${baseUrl}${company.logo}`}
-                                  alt={`Logo de ${company.name}`}
-                                  className="h-10 w-10 object-contain border border-slate-200 dark:border-slate-700 rounded"
-                                />
+                                <div className="relative h-10 w-10">
+                                  <img
+                                    src={company.logo}
+                                    alt={`Logo de ${company.name}`}
+                                    className="h-10 w-10 object-contain border border-slate-200 dark:border-slate-700 rounded"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const fallback = target.nextElementSibling as HTMLElement;
+                                      if (fallback) fallback.style.display = 'flex';
+                                    }}
+                                  />
+                                  <div className="h-10 w-10 absolute inset-0 items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800" style={{ display: 'none' }}>
+                                    <Building2 className="h-5 w-5 text-slate-400" />
+                                  </div>
+                                </div>
                               ) : (
                                 <div className="h-10 w-10 flex items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800">
                                   <Building2 className="h-5 w-5 text-slate-400" />
@@ -645,8 +656,6 @@ export function CompaniesPage() {
                 </div>
               ) : (
                 data?.data.map((company, index) => {
-                  const baseUrl =
-                    import.meta.env.VITE_API_URL || 'http://localhost:3000';
                   return (
                     <div
                       key={company._id}
@@ -656,11 +665,22 @@ export function CompaniesPage() {
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           {company.logo ? (
-                            <img
-                              src={`${baseUrl}${company.logo}`}
-                              alt={`Logo de ${company.name}`}
-                              className="h-12 w-12 object-contain border border-slate-200 dark:border-slate-700 rounded shrink-0"
-                            />
+                            <div className="relative h-12 w-12 shrink-0">
+                              <img
+                                src={company.logo}
+                                alt={`Logo de ${company.name}`}
+                                className="h-12 w-12 object-contain border border-slate-200 dark:border-slate-700 rounded"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const fallback = target.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div className="h-12 w-12 absolute inset-0 items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800" style={{ display: 'none' }}>
+                                <Building2 className="h-6 w-6 text-slate-400" />
+                              </div>
+                            </div>
                           ) : (
                             <div className="h-12 w-12 flex items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800 shrink-0">
                               <Building2 className="h-6 w-6 text-slate-400" />
@@ -770,17 +790,26 @@ export function CompaniesPage() {
                   </TableRow>
                 ) : (
                   data?.data.map((company) => {
-                    const baseUrl =
-                      import.meta.env.VITE_API_URL || 'http://localhost:3000';
                     return (
                       <TableRow key={company._id}>
                         <TableCell>
                           {company.logo ? (
+                            <div className="relative h-10 w-10">
                             <img
-                              src={`${baseUrl}${company.logo}`}
+                              src={company.logo}
                               alt={`Logo de ${company.name}`}
                               className="h-10 w-10 object-contain border border-slate-200 dark:border-slate-700 rounded"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
                             />
+                            <div className="h-10 w-10 absolute inset-0 items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800" style={{ display: 'none' }}>
+                              <Building2 className="h-5 w-5 text-slate-400" />
+                            </div>
+                            </div>
                           ) : (
                             <div className="h-10 w-10 flex items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800">
                               <Building2 className="h-5 w-5 text-slate-400" />
@@ -861,8 +890,6 @@ export function CompaniesPage() {
               </div>
             ) : (
               data?.data.map((company, index) => {
-                const baseUrl =
-                  import.meta.env.VITE_API_URL || 'http://localhost:3000';
                 return (
                   <div
                     key={company._id}
@@ -872,11 +899,22 @@ export function CompaniesPage() {
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         {company.logo ? (
-                          <img
-                            src={`${baseUrl}${company.logo}`}
-                            alt={`Logo de ${company.name}`}
-                            className="h-12 w-12 object-contain border border-slate-200 dark:border-slate-700 rounded shrink-0"
-                          />
+                          <div className="relative h-12 w-12 shrink-0">
+                            <img
+                              src={company.logo}
+                              alt={`Logo de ${company.name}`}
+                              className="h-12 w-12 object-contain border border-slate-200 dark:border-slate-700 rounded"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                            <div className="h-12 w-12 absolute inset-0 items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800" style={{ display: 'none' }}>
+                              <Building2 className="h-6 w-6 text-slate-400" />
+                            </div>
+                          </div>
                         ) : (
                           <div className="h-12 w-12 flex items-center justify-center border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800 shrink-0">
                             <Building2 className="h-6 w-6 text-slate-400" />

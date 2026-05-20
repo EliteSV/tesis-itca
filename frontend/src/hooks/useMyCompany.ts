@@ -54,10 +54,8 @@ export function useUpdateMyCompany() {
   const { success, error: showError } = useToast();
 
   return useMutation({
-    mutationFn: (params: {
-      data: UpdateCompanyDto;
-      logoFile?: File;
-    }) => companiesApi.updateMyCompany(params.data, params.logoFile),
+    mutationFn: (params: { data: UpdateCompanyDto }) =>
+      companiesApi.updateMyCompany(params.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-company'] });
       queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });

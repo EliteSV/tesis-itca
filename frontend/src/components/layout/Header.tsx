@@ -19,9 +19,8 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const userAvatar = user?.role === UserRole.COMPANY && company?.logo
-    ? `${baseUrl}${company.logo}`
+    ? company.logo
     : null;
 
   useEffect(() => {

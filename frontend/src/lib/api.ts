@@ -192,56 +192,12 @@ export const companiesApi = {
     );
     return response.data;
   },
-  create: async (
-    data: CreateCompanyDto,
-    logoFile?: File,
-  ): Promise<Company> => {
-    const formData = new FormData();
-    Object.keys(data).forEach((key) => {
-      const value = data[key as keyof CreateCompanyDto];
-      if (value !== undefined && value !== null) {
-        if (key === 'initialUser' && typeof value === 'object') {
-          formData.append('initialUser', JSON.stringify(value));
-        } else if (key !== 'initialUser') {
-          formData.append(key, String(value));
-        }
-      }
-    });
-    if (data.initialUser) {
-      formData.append('initialUser', JSON.stringify(data.initialUser));
-    }
-    if (logoFile) {
-      formData.append('logo', logoFile);
-    }
-
-    const response = await api.post<Company>('/companies', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  create: async (data: CreateCompanyDto): Promise<Company> => {
+    const response = await api.post<Company>('/companies', data);
     return response.data;
   },
-  update: async (
-    id: string,
-    data: UpdateCompanyDto,
-    logoFile?: File,
-  ): Promise<Company> => {
-    const formData = new FormData();
-    Object.keys(data).forEach((key) => {
-      const value = data[key as keyof UpdateCompanyDto];
-      if (value !== undefined && value !== null) {
-        formData.append(key, String(value));
-      }
-    });
-    if (logoFile) {
-      formData.append('logo', logoFile);
-    }
-
-    const response = await api.patch<Company>(`/companies/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  update: async (id: string, data: UpdateCompanyDto): Promise<Company> => {
+    const response = await api.patch<Company>(`/companies/${id}`, data);
     return response.data;
   },
   delete: async (id: string): Promise<{ message: string }> => {
@@ -282,26 +238,8 @@ export const companiesApi = {
     const response = await api.post<Company>('/companies/my-company', data);
     return response.data;
   },
-  updateMyCompany: async (
-    data: UpdateCompanyDto,
-    logoFile?: File,
-  ): Promise<Company> => {
-    const formData = new FormData();
-    Object.keys(data).forEach((key) => {
-      const value = data[key as keyof UpdateCompanyDto];
-      if (value !== undefined && value !== null) {
-        formData.append(key, String(value));
-      }
-    });
-    if (logoFile) {
-      formData.append('logo', logoFile);
-    }
-
-    const response = await api.patch<Company>('/companies/my-company', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  updateMyCompany: async (data: UpdateCompanyDto): Promise<Company> => {
+    const response = await api.patch<Company>('/companies/my-company', data);
     return response.data;
   },
 };

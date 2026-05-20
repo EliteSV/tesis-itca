@@ -102,6 +102,14 @@ export class CreateCompanyDto {
   status?: CompanyStatus;
 
   @ApiPropertyOptional({
+    description: 'Logo de la empresa en formato Base64 (data URL)',
+    example: 'data:image/png;base64,...',
+  })
+  @IsString()
+  @IsOptional()
+  logo?: string;
+
+  @ApiPropertyOptional({
     description: 'Datos del usuario inicial (opcional)',
     type: CreateInitialUserDto,
   })

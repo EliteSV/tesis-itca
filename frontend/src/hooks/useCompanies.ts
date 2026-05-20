@@ -42,13 +42,7 @@ export function useCreateCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      data,
-      logoFile,
-    }: {
-      data: CreateCompanyDto;
-      logoFile?: File;
-    }) => companiesApi.create(data, logoFile),
+    mutationFn: (data: CreateCompanyDto) => companiesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
@@ -59,15 +53,8 @@ export function useUpdateCompany() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-      logoFile,
-    }: {
-      id: string;
-      data: UpdateCompanyDto;
-      logoFile?: File;
-    }) => companiesApi.update(id, data, logoFile),
+    mutationFn: ({ id, data }: { id: string; data: UpdateCompanyDto }) =>
+      companiesApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },

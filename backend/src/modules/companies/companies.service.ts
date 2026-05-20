@@ -3,16 +3,12 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
-import { MulterFile } from '@/common/types/multer.types';
 import {
   Company,
   CompanyDocument,
@@ -41,25 +37,15 @@ export class CompaniesService {
     private invitationModel: Model<CompanyInvitationDocument>,
     private configService: ConfigService,
     private emailService: EmailService,
-  ) {
-    const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-  }
+  ) {}
 
-  async create(createCompanyDto: CreateCompanyDto, logo?: MulterFile) {
+  async create(createCompanyDto: CreateCompanyDto) {
     const existingCompany = await this.companyModel.findOne({
       nit: createCompanyDto.nit,
     });
 
     if (existingCompany) {
       throw new ConflictException('Ya existe una empresa con este NIT');
-    }
-
-    let logoPath: string | undefined;
-    if (logo) {
-      logoPath = `/uploads/logos/${logo.filename}`;
     }
 
     const company = new this.companyModel({
@@ -71,7 +57,7 @@ export class CompaniesService {
       sector: createCompanyDto.sector,
       description: createCompanyDto.description,
       status: createCompanyDto.status || CompanyStatus.ACTIVE,
-      logo: logoPath,
+      logo: createCompanyDto.logo,
     });
     const savedCompany = await company.save();
 
@@ -325,11 +311,7 @@ export class CompaniesService {
     return { message: 'Usuario eliminado exitosamente' };
   }
 
-  async update(
-    id: string,
-    updateCompanyDto: UpdateCompanyDto,
-    logo?: MulterFile,
-  ) {
+  async update(id: string, updateCompanyDto: UpdateCompanyDto): Promise<CompanyDocument | null> {
     if (updateCompanyDto.nit) {
       const existingCompany = await this.companyModel.findOne({
         nit: updateCompanyDto.nit,
@@ -346,43 +328,8 @@ export class CompaniesService {
       throw new NotFoundException('Empresa no encontrada');
     }
 
-    const updateData: {
-      name?: string;
-      nit?: string;
-      address?: string;
-      phone?: string;
-      email?: string;
-      sector?: string;
-      description?: string;
-      status?: string;
-      isActive?: boolean;
-      logo?: string;
-    } = { ...updateCompanyDto };
-
-    if (logo) {
-      const logoPath = `/uploads/logos/${logo.filename}`;
-      updateData.logo = logoPath;
-
-      if (existingCompany.logo) {
-        const logoFileName = path.basename(existingCompany.logo);
-        const oldLogoPath = path.join(
-          process.cwd(),
-          'uploads',
-          'logos',
-          logoFileName,
-        );
-        try {
-          if (fs.existsSync(oldLogoPath)) {
-            fs.unlinkSync(oldLogoPath);
-          }
-        } catch (error) {
-          console.error('Error al eliminar logo anterior:', error);
-        }
-      }
-    }
-
     const company = await this.companyModel
-      .findByIdAndUpdate(id, updateData, {
+      .findByIdAndUpdate(id, { ...updateCompanyDto }, {
         new: true,
         runValidators: true,
       })
@@ -547,7 +494,6 @@ export class CompaniesService {
   async updateCompanyByUserId(
     userId: string,
     updateCompanyDto: UpdateCompanyDto,
-    logo?: MulterFile,
   ) {
     const user = await this.userModel.findById(userId).exec();
     if (!user || !user.companyId) {
@@ -556,6 +502,6 @@ export class CompaniesService {
       );
     }
 
-    return this.update(user.companyId.toString(), updateCompanyDto, logo);
+    return this.update(user.companyId.toString(), updateCompanyDto);
   }
 }

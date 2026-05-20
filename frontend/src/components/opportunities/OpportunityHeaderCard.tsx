@@ -7,7 +7,6 @@ import type { Opportunity } from '@/types/opportunity.types';
 
 interface OpportunityHeaderCardProps {
   opportunity: Opportunity;
-  baseUrl: string;
   onToggleActive: () => void;
   isToggling: boolean;
   acceptedCount: number;
@@ -34,7 +33,6 @@ function capitalizeFirst(str: string) {
 
 export function OpportunityHeaderCard({
   opportunity,
-  baseUrl,
   onToggleActive,
   isToggling,
   acceptedCount,
@@ -51,7 +49,7 @@ export function OpportunityHeaderCard({
               <>
                 <img
                   key={`logo-${opportunity._id}-${opportunity.company.logo}`}
-                  src={`${baseUrl}${opportunity.company.logo}`}
+                  src={opportunity.company.logo}
                   alt={opportunity.company.name || 'Company logo'}
                   className="w-full h-full rounded-lg object-contain border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1"
                   onLoad={() => {

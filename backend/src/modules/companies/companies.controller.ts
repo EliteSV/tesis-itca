@@ -9,16 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
 } from '@nestjs/common';
-import { ParseFormDataPipe } from '@/common/pipes/parse-form-data.pipe';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import * as fs from 'fs';
-import type { MulterFile } from '@/common/types/multer.types';
 import { CompaniesService } from '@/modules/companies/companies.service';
 import { CreateCompanyDto } from '@/modules/companies/dto/create-company.dto';
 import { UpdateCompanyDto } from '@/modules/companies/dto/update-company.dto';
@@ -50,51 +41,6 @@ export class CompaniesController {
 
   @Post()
   @Roles(UserRole.ADMIN)
-  @UseInterceptors(
-    FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: (
-          _req: unknown,
-          _file: { originalname?: string },
-          cb: (error: Error | null, destination: string) => void,
-        ) => {
-          const uploadsDir = './uploads/logos';
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (
-          _req: unknown,
-          file: { originalname?: string },
-          cb: (error: Error | null, filename: string) => void,
-        ) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname || '');
-          cb(null, `company-${uniqueSuffix}${ext}`);
-        },
-      }),
-      fileFilter: (
-        _req: unknown,
-        file: { mimetype?: string },
-        cb: (error: Error | null, acceptFile: boolean) => void,
-      ) => {
-        const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (file.mimetype && allowedMimes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(
-            new BadRequestException('Solo se permiten archivos PNG o JPG'),
-            false,
-          );
-        }
-      },
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-      },
-    }),
-  )
   @ApiOperation({ summary: 'Crear una nueva empresa' })
   @ApiBody({ type: CreateCompanyDto })
   @ApiResponse({
@@ -106,11 +52,8 @@ export class CompaniesController {
     status: 409,
     description: 'Conflicto: NIT o email de usuario ya existe',
   })
-  create(
-    @Body(ParseFormDataPipe) createCompanyDto: CreateCompanyDto,
-    @UploadedFile() logo?: MulterFile,
-  ) {
-    return this.companiesService.create(createCompanyDto, logo);
+  create(@Body() createCompanyDto: CreateCompanyDto) {
+    return this.companiesService.create(createCompanyDto);
   }
 
   @Get()
@@ -310,51 +253,6 @@ export class CompaniesController {
 
   @Patch('my-company')
   @Roles(UserRole.COMPANY)
-  @UseInterceptors(
-    FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: (
-          _req: unknown,
-          _file: { originalname?: string },
-          cb: (error: Error | null, destination: string) => void,
-        ) => {
-          const uploadsDir = './uploads/logos';
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (
-          _req: unknown,
-          file: { originalname?: string },
-          cb: (error: Error | null, filename: string) => void,
-        ) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname || '');
-          cb(null, `company-${uniqueSuffix}${ext}`);
-        },
-      }),
-      fileFilter: (
-        _req: unknown,
-        file: { mimetype?: string },
-        cb: (error: Error | null, acceptFile: boolean) => void,
-      ) => {
-        const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (file.mimetype && allowedMimes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(
-            new BadRequestException('Solo se permiten archivos PNG o JPG'),
-            false,
-          );
-        }
-      },
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-      },
-    }),
-  )
   @ApiOperation({
     summary: 'Actualizar información de mi empresa',
     description:
@@ -372,63 +270,16 @@ export class CompaniesController {
   @ApiResponse({ status: 409, description: 'Conflicto: NIT ya existe' })
   updateMyCompany(
     @Request() req: { user: { id: string } },
-    @Body(ParseFormDataPipe) updateCompanyDto: UpdateCompanyDto,
-    @UploadedFile() logo?: MulterFile,
+    @Body() updateCompanyDto: UpdateCompanyDto,
   ) {
     return this.companiesService.updateCompanyByUserId(
       req.user.id,
       updateCompanyDto,
-      logo,
     );
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN)
-  @UseInterceptors(
-    FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: (
-          _req: unknown,
-          _file: { originalname?: string },
-          cb: (error: Error | null, destination: string) => void,
-        ) => {
-          const uploadsDir = './uploads/logos';
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (
-          _req: unknown,
-          file: { originalname?: string },
-          cb: (error: Error | null, filename: string) => void,
-        ) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname || '');
-          cb(null, `company-${uniqueSuffix}${ext}`);
-        },
-      }),
-      fileFilter: (
-        _req: unknown,
-        file: { mimetype?: string },
-        cb: (error: Error | null, acceptFile: boolean) => void,
-      ) => {
-        const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (file.mimetype && allowedMimes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(
-            new BadRequestException('Solo se permiten archivos PNG o JPG'),
-            false,
-          );
-        }
-      },
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-      },
-    }),
-  )
   @ApiOperation({ summary: 'Actualizar una empresa' })
   @ApiResponse({
     status: 200,
@@ -439,10 +290,9 @@ export class CompaniesController {
   @ApiResponse({ status: 409, description: 'Conflicto: NIT ya existe' })
   update(
     @Param('id') id: string,
-    @Body(ParseFormDataPipe) updateCompanyDto: UpdateCompanyDto,
-    @UploadedFile() logo?: MulterFile,
+    @Body() updateCompanyDto: UpdateCompanyDto,
   ) {
-    return this.companiesService.update(id, updateCompanyDto, logo);
+    return this.companiesService.update(id, updateCompanyDto);
   }
 
   @Delete(':id')

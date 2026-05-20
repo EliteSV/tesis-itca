@@ -6,7 +6,6 @@ import type { Opportunity } from '@/types/opportunity.types';
 
 interface OpportunityDetailTabProps {
   opportunity: Opportunity;
-  baseUrl: string;
   acceptedCount: number;
   pendingCount: number;
   rejectedCount: number;
@@ -18,7 +17,6 @@ interface OpportunityDetailTabProps {
 
 export function OpportunityDetailTab({
   opportunity,
-  baseUrl,
   acceptedCount,
   pendingCount,
   rejectedCount,
@@ -35,7 +33,7 @@ export function OpportunityDetailTab({
         rejectedCount={rejectedCount}
       />
 
-      <CompanyInfoSection opportunity={opportunity} baseUrl={baseUrl} />
+      <CompanyInfoSection opportunity={opportunity} />
 
       {!canAcceptMore && (
         <Card

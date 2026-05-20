@@ -47,7 +47,6 @@ export function CompanyProfileForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingData, setPendingData] = useState<CompanyFormData | null>(null);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   
   const hasCompany = !!company;
@@ -80,12 +79,7 @@ export function CompanyProfileForm() {
       });
       
       // Cargar preview del logo si existe
-      if (company.logo) {
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        setLogoPreview(`${baseUrl}${company.logo}`);
-      } else {
-        setLogoPreview(null);
-      }
+      setLogoPreview(company.logo || null);
     } else if (isNotFound) {
       // Resetear formulario a valores vacíos si no hay empresa
       reset({
@@ -99,7 +93,6 @@ export function CompanyProfileForm() {
       });
       setLogoPreview(null);
     }
-    setLogoFile(null);
   }, [company, isNotFound, reset]);
   
   const handleLogoChange = useCallback(
@@ -114,7 +107,6 @@ export function CompanyProfileForm() {
           alert('El archivo no debe exceder 5MB');
           return;
         }
-        setLogoFile(file);
         const reader = new FileReader();
         reader.onloadend = () => {
           setLogoPreview(reader.result as string);
@@ -126,12 +118,7 @@ export function CompanyProfileForm() {
   );
 
   const handleRemoveLogo = useCallback(() => {
-    setLogoFile(null);
-    setLogoPreview(null);
-    if (company?.logo) {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      setLogoPreview(`${baseUrl}${company.logo}`);
-    }
+    setLogoPreview(company?.logo || null);
   }, [company]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -183,11 +170,9 @@ export function CompanyProfileForm() {
           email: pendingData.email || undefined,
           sector: pendingData.sector || undefined,
           description: pendingData.description || undefined,
+          logo: logoPreview || undefined,
         };
-        updateCompanyMutation.mutate({
-          data: updateData,
-          logoFile: logoFile || undefined,
-        });
+        updateCompanyMutation.mutate({ data: updateData });
       } else {
         // Crear nueva empresa
         const createData: CreateCompanyDto = {
@@ -198,12 +183,12 @@ export function CompanyProfileForm() {
           email: pendingData.email || undefined,
           sector: pendingData.sector || undefined,
           description: pendingData.description || undefined,
+          logo: logoPreview || undefined,
         };
         createCompanyMutation.mutate(createData);
       }
       setShowConfirmDialog(false);
       setPendingData(null);
-      setLogoFile(null);
     }
   };
 
@@ -261,7 +246,7 @@ export function CompanyProfileForm() {
                         alt="Logo preview"
                         className="h-24 w-24 object-contain border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
                       />
-                      {logoFile && (
+                      {logoPreview !== (company?.logo || null) && (
                         <button
                           type="button"
                           onClick={handleRemoveLogo}
@@ -633,7 +618,7 @@ export function CompanyProfileForm() {
                     alt="Logo preview"
                     className="h-24 w-24 object-contain border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
                   />
-                  {logoFile && (
+                  {logoPreview !== (company?.logo || null) && (
                     <button
                       type="button"
                       onClick={handleRemoveLogo}
