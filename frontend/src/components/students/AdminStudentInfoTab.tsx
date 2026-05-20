@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import {
   Mail,
   Phone,
@@ -7,15 +8,29 @@ import {
   FileText,
   Download,
   Loader2,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { formatDate } from '@/utils/date.utils';
 import type { Student } from '@/types/student.types';
 import { StudentStatus } from '@/types/student.types';
 import { ProfessionalProfileView } from './ProfessionalProfileView';
+
+function base64ToBlobUrl(base64: string): string {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+}
 
 interface AdminStudentInfoTabProps {
   student: Student;
@@ -28,6 +43,28 @@ export function AdminStudentInfoTab({
   isGeneratingPDF,
   onDownloadPDF,
 }: AdminStudentInfoTabProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
+
+  const openPreview = (fileData: string, title: string) => {
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    const url = base64ToBlobUrl(fileData);
+    blobUrlRef.current = url;
+    setPreviewUrl(url);
+    setPreviewTitle(title);
+  };
+
+  const closePreview = () => {
+    setPreviewUrl(null);
+  };
+
   const getStatusBadgeVariant = (status: string, isActive: boolean) => {
     if (!isActive) return 'destructive';
     switch (status) {
@@ -58,6 +95,33 @@ export function AdminStudentInfoTab({
   };
 
   return (
+    <>
+    <Dialog open={!!previewUrl} onOpenChange={(open) => { if (!open) closePreview(); }}>
+      <DialogContent className="max-w-4xl w-full">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            {previewTitle}
+          </DialogTitle>
+        </DialogHeader>
+        {previewUrl && (
+          <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900">
+            <object
+              data={previewUrl}
+              type="application/pdf"
+              className="w-full h-[70vh]"
+              aria-label={previewTitle}
+            >
+              <iframe
+                src={previewUrl}
+                title={previewTitle}
+                className="w-full h-[70vh]"
+              />
+            </object>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
     <div className="space-y-4 sm:space-y-6">
       {/* Personal Information */}
       <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm">
@@ -193,7 +257,7 @@ export function AdminStudentInfoTab({
       </Card>
 
       {/* Documents */}
-      {student.socialServiceDocument && (
+      {(student.socialServiceDocument || student.passedSubjectsDocument || student.enrollmentProofDocument) && (
         <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
@@ -202,36 +266,166 @@ export function AdminStudentInfoTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">
-                  Documento de Horas Sociales
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={student.socialServiceDocument.isValidated ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {student.socialServiceDocument.isValidated ? 'Validado' : 'Pendiente'}
-                  </Badge>
-                  {student.socialServiceDocument.validatedAt && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      {formatDate(student.socialServiceDocument.validatedAt)}
-                    </span>
-                  )}
+            <div className="space-y-4">
+              {/* Horas Sociales */}
+              {student.socialServiceDocument && (
+                <div>
+                  <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">
+                    Documento de Horas Sociales
+                  </Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge
+                      variant={student.socialServiceDocument.isValidated ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {student.socialServiceDocument.isValidated ? 'Validado' : 'Pendiente'}
+                    </Badge>
+                    {student.socialServiceDocument.validatedAt && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {formatDate(student.socialServiceDocument.validatedAt)}
+                      </span>
+                    )}
+                    {student.socialServiceDocument.fileData && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => openPreview(student.socialServiceDocument!.fileData!, 'Documento de Horas Sociales')}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Ver
+                      </Button>
+                    )}
+                  </div>
+                  {student.socialServiceDocument.validationErrors &&
+                    student.socialServiceDocument.validationErrors.length > 0 && (
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/10 rounded text-xs text-red-600 dark:text-red-400">
+                        <p className="font-semibold mb-1">Errores:</p>
+                        <ul className="list-disc list-inside">
+                          {student.socialServiceDocument.validationErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                 </div>
-                {student.socialServiceDocument.validationErrors &&
-                  student.socialServiceDocument.validationErrors.length > 0 && (
-                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/10 rounded text-xs text-red-600 dark:text-red-400">
-                      <p className="font-semibold mb-1">Errores:</p>
-                      <ul className="list-disc list-inside">
-                        {student.socialServiceDocument.validationErrors.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
-                    </div>
+              )}
+
+              {/* Validación de Materias */}
+              {student.passedSubjectsDocument && (
+                <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                  <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">
+                    Validación de Materias
+                  </Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge
+                      variant={student.passedSubjectsDocument.isValidated ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {student.passedSubjectsDocument.isValidated ? 'Validado' : 'Pendiente'}
+                    </Badge>
+                    {student.passedSubjectsDocument.validatedAt && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {formatDate(student.passedSubjectsDocument.validatedAt)}
+                      </span>
+                    )}
+                    {student.passedSubjectsDocument.fileData && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => openPreview(student.passedSubjectsDocument!.fileData!, 'Validación de Materias')}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Ver
+                      </Button>
+                    )}
+                  </div>
+                  {(student.passedSubjectsDocument.passedCount !== undefined ||
+                    student.passedSubjectsDocument.totalSubjects !== undefined) && (
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                      Materias aprobadas: {student.passedSubjectsDocument.passedCount ?? '—'} /{' '}
+                      {student.passedSubjectsDocument.totalSubjects ?? '—'}
+                      {student.passedSubjectsDocument.validationAccuracyPercent !== undefined && (
+                        <span className="ml-2">
+                          ({student.passedSubjectsDocument.validationAccuracyPercent.toFixed(1)}% precisión)
+                        </span>
+                      )}
+                    </p>
                   )}
-              </div>
+                  {student.passedSubjectsDocument.validationErrors &&
+                    student.passedSubjectsDocument.validationErrors.length > 0 && (
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/10 rounded text-xs text-red-600 dark:text-red-400">
+                        <p className="font-semibold mb-1">Errores:</p>
+                        <ul className="list-disc list-inside">
+                          {student.passedSubjectsDocument.validationErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </div>
+              )}
+
+              {/* Comprobante de Inscripción */}
+              {student.enrollmentProofDocument && (
+                <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                  <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">
+                    Comprobante de Inscripción
+                  </Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge
+                      variant={student.enrollmentProofDocument.isValidated ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {student.enrollmentProofDocument.isValidated ? 'Validado' : 'Pendiente'}
+                    </Badge>
+                    {student.enrollmentProofDocument.validatedAt && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {formatDate(student.enrollmentProofDocument.validatedAt)}
+                      </span>
+                    )}
+                    {student.enrollmentProofDocument.fileData && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => openPreview(student.enrollmentProofDocument!.fileData!, 'Comprobante de Inscripción')}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Ver
+                      </Button>
+                    )}
+                  </div>
+                  {student.enrollmentProofDocument.cycle && (
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                      Ciclo: {student.enrollmentProofDocument.cycle}
+                    </p>
+                  )}
+                  {student.enrollmentProofDocument.documentStudentName && (
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                      Nombre en documento: {student.enrollmentProofDocument.documentStudentName}
+                    </p>
+                  )}
+                  {student.enrollmentProofDocument.enrolledSubjects &&
+                    student.enrollmentProofDocument.enrolledSubjects.length > 0 && (
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                        Materias inscritas: {student.enrollmentProofDocument.enrolledSubjects.length}
+                      </p>
+                    )}
+                  {student.enrollmentProofDocument.validationErrors &&
+                    student.enrollmentProofDocument.validationErrors.length > 0 && (
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/10 rounded text-xs text-red-600 dark:text-red-400">
+                        <p className="font-semibold mb-1">Errores:</p>
+                        <ul className="list-disc list-inside">
+                          {student.enrollmentProofDocument.validationErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -249,6 +443,7 @@ export function AdminStudentInfoTab({
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }
 
