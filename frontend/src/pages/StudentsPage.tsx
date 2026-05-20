@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Plus, GraduationCap, Download, FileText, Copy, Check } from 'lucide-react';
+import { Plus, GraduationCap, FileSpreadsheet, FileText, Copy, Check } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatDate } from '@/utils/date.utils';
-import { exportToCSV } from '@/utils/export.utils';
+import { exportToExcel } from '@/utils/export.utils';
 import { AutocompleteSearch } from '@/components/ui/autocomplete-search';
 import {
   useStudents,
@@ -520,7 +520,7 @@ export function StudentsPage() {
       'Fecha de Creación': formatDate(student.createdAt),
       'Fecha de Actualización': formatDate(student.updatedAt),
     }));
-    exportToCSV(exportData, 'estudiantes', {
+    exportToExcel(exportData, 'estudiantes', {
       Nombre: 'Nombre',
       Email: 'Email',
       'Número de Identificación': 'Número de Identificación',
@@ -674,15 +674,15 @@ export function StudentsPage() {
           </div>
           {!isCompanyUser && (
             <div className="flex items-center gap-2">
-              <Tooltip content="Exportar a CSV">
+              <Tooltip content="Exportar a Excel">
                 <Button
                   onClick={handleExport}
                   variant="outline"
                   size="sm"
                   className="gap-1.5 sm:gap-2 transition-all duration-200 hover:scale-105 active:scale-95 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                  aria-label="Exportar datos a CSV"
+                  aria-label="Exportar datos a Excel"
                 >
-                  <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Exportar</span>
                 </Button>
               </Tooltip>

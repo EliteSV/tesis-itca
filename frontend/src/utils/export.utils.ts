@@ -47,6 +47,31 @@ export function exportToExcel<T extends Record<string, unknown>>(
   filename: string,
   headers?: Record<string, string>,
 ): void {
-  exportToCSV(data, filename, headers);
+  if (data.length === 0) {
+    alert('No hay datos para exportar');
+    return;
+  }
+
+  import('xlsx').then((XLSX) => {
+    const keys = Object.keys(data[0]);
+    const headerLabels = headers || {};
+
+    const worksheetData = [
+      keys.map((key) => headerLabels[key] || key),
+      ...data.map((row) =>
+        keys.map((key) => {
+          const value = row[key];
+          if (value === null || value === undefined) return '';
+          if (typeof value === 'object') return JSON.stringify(value);
+          return value;
+        }),
+      ),
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
+  });
 }
 
