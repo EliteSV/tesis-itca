@@ -107,7 +107,7 @@ export function UserFormDialog({
           name: user.name,
           email: user.email,
           role: user.role,
-          careerId: user.careerId || '',
+          careerId: user.career?._id ?? user.careerId ?? '',
         });
       } else {
         reset({
@@ -120,11 +120,6 @@ export function UserFormDialog({
     }
   }, [open, user, reset]);
 
-  useEffect(() => {
-    if (role !== UserRole.COORDINADOR) {
-      setValue('careerId', '');
-    }
-  }, [role, setValue]);
 
   const handleClose = useCallback(() => {
     const password = generatedPassword;
@@ -296,7 +291,12 @@ export function UserFormDialog({
             </Label>
             <Select
               value={role || UserRole.ADMIN}
-              onValueChange={(value) => setValue('role', value as UserRole)}
+              onValueChange={(value) => {
+                setValue('role', value as UserRole);
+                if (value !== UserRole.COORDINADOR) {
+                  setValue('careerId', '');
+                }
+              }}
             >
               <SelectTrigger className="focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
                 <SelectValue placeholder="Seleccionar rol" />

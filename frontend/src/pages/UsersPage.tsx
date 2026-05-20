@@ -723,6 +723,29 @@ export function UsersPage() {
                     </p>
                   </div>
                 </div>
+                {selectedUser.role === UserRole.COORDINADOR && (
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
+                      Carrera asociada
+                    </p>
+                    {selectedUser.career ? (
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                        <div>
+                          <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {selectedUser.career.name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {selectedUser.career.code}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 italic">
+                        Sin carrera asignada
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>

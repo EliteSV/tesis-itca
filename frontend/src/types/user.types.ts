@@ -1,11 +1,18 @@
 import { UserRole } from './auth.types';
 
+export interface CareerSummary {
+  _id: string;
+  name: string;
+  code: string;
+}
+
 export interface User {
   _id: string;
   name: string;
   email: string;
   role: UserRole;
   careerId?: string;
+  career?: CareerSummary;
   isActive: boolean;
   isTemporaryPassword: boolean;
   createdAt: string;

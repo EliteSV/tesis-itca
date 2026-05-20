@@ -1,6 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@/modules/auth/schemas/user.schema';
 
+export class CareerSummaryDto {
+  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
+  _id: string;
+
+  @ApiProperty({ example: 'Ingeniería en Sistemas' })
+  name: string;
+
+  @ApiProperty({ example: 'IS' })
+  code: string;
+}
+
 export class UserResponseDto {
   @ApiProperty({
     description: 'ID del usuario',
@@ -32,6 +43,12 @@ export class UserResponseDto {
     example: '507f1f77bcf86cd799439011',
   })
   careerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Datos de la carrera asociada (solo para coordinadores)',
+    type: CareerSummaryDto,
+  })
+  career?: CareerSummaryDto;
 
   @ApiProperty({
     description: 'Estado activo/inactivo',

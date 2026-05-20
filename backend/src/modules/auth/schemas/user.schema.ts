@@ -10,7 +10,11 @@ export enum UserRole {
   COORDINADOR = 'coordinador',
 }
 
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+})
 export class User {
   @Prop({ required: true, unique: true })
   email: string;
@@ -38,6 +42,13 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.virtual('career', {
+  ref: 'Career',
+  localField: 'careerId',
+  foreignField: '_id',
+  justOne: true,
+});
 
 UserSchema.index({ companyId: 1 });
 UserSchema.index({ careerId: 1 });

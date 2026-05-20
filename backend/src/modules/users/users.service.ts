@@ -155,7 +155,7 @@ export class UsersService {
       this.userModel
         .find(query)
         .select('-password')
-        .populate('careerId', 'name code')
+        .populate('career', 'name code')
         .skip(skip)
         .limit(limit)
         .sort(sortObj)
@@ -177,7 +177,7 @@ export class UsersService {
     const user = await this.userModel
       .findById(id)
       .select('-password')
-      .populate('careerId', 'name code')
+      .populate('career', 'name code')
       .lean()
       .exec();
 
@@ -266,7 +266,7 @@ export class UsersService {
         runValidators: true,
       })
       .select('-password')
-      .populate('careerId', 'name code')
+      .populate('career', 'name code')
       .lean()
       .exec();
 
