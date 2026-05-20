@@ -157,63 +157,30 @@ export class Student {
   };
 
   @Prop({
-    type: [
-      {
-        company: String,
-        position: String,
-        description: String,
-        startDate: Date,
-        endDate: Date,
-        isCurrent: Boolean,
-      },
-    ],
-    required: false,
-    default: [],
-  })
-  workExperience?: Array<{
-    company: string;
-    position: string;
-    description?: string;
-    startDate: Date;
-    endDate?: Date;
-    isCurrent?: boolean;
-  }>;
-
-  @Prop({
-    type: [
-      {
-        institution: String,
-        degree: String,
-        field: String,
-        startDate: Date,
-        endDate: Date,
-        isCurrent: Boolean,
-        description: String,
-      },
-    ],
-    required: false,
-    default: [],
-  })
-  education?: Array<{
-    institution: string;
-    degree: string;
-    field?: string;
-    startDate: Date;
-    endDate?: Date;
-    isCurrent?: boolean;
-    description?: string;
-  }>;
-
-  @Prop({
-    type: [String],
-    required: false,
-    default: [],
-  })
-  skills?: string[];
-
-  @Prop({
     type: {
       summary: String,
+      skills: [String],
+      workExperience: [
+        {
+          company: String,
+          position: String,
+          description: String,
+          startDate: Date,
+          endDate: Date,
+          isCurrent: Boolean,
+        },
+      ],
+      education: [
+        {
+          institution: String,
+          degree: String,
+          field: String,
+          startDate: Date,
+          endDate: Date,
+          isCurrent: Boolean,
+          description: String,
+        },
+      ],
       languages: [
         {
           name: String,
@@ -241,6 +208,24 @@ export class Student {
   })
   professionalProfile?: {
     summary?: string;
+    skills?: string[];
+    workExperience?: Array<{
+      company: string;
+      position: string;
+      description?: string;
+      startDate: Date;
+      endDate?: Date;
+      isCurrent?: boolean;
+    }>;
+    education?: Array<{
+      institution: string;
+      degree: string;
+      field?: string;
+      startDate: Date;
+      endDate?: Date;
+      isCurrent?: boolean;
+      description?: string;
+    }>;
     languages?: Array<{
       name: string;
       level: string;

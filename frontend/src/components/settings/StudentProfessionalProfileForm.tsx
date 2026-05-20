@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { generateStudentPDF } from '@/utils/pdf.utils';
 import {
   Briefcase,
@@ -30,6 +30,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -160,10 +167,11 @@ export function StudentProfessionalProfileForm() {
 
   useEffect(() => {
     if (student) {
-      setWorkExperiences(student.workExperience || []);
-      setEducation(student.education || []);
-      setSkills(student.skills || []);
-      setProfessionalProfile(student.professionalProfile || {});
+      const pp = student.professionalProfile || {};
+      setWorkExperiences(pp.workExperience || []);
+      setEducation(pp.education || []);
+      setSkills(pp.skills || []);
+      setProfessionalProfile(pp);
     }
   }, [student]);
 
@@ -529,10 +537,12 @@ export function StudentProfessionalProfileForm() {
 
   const handleConfirmSave = useCallback(() => {
     const updateData = {
-      workExperience: workExperiences,
-      education: education,
-      skills: skills,
-      professionalProfile: professionalProfile,
+      professionalProfile: {
+        ...professionalProfile,
+        workExperience: workExperiences,
+        education: education,
+        skills: skills,
+      },
     };
 
     updateStudentMutation.mutate(updateData, {
@@ -559,10 +569,10 @@ export function StudentProfessionalProfileForm() {
 
     try {
       await generateStudentPDF(student, {
-        workExperiences,
+        ...professionalProfile,
+        workExperience: workExperiences,
         education,
         skills,
-        professionalProfile,
       });
       success('Éxito', 'PDF generado correctamente');
     } catch (error: any) {
@@ -1232,10 +1242,22 @@ export function StudentProfessionalProfileForm() {
               <Label htmlFor="langLevel">
                 Nivel <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="langLevel"
-                {...languageForm.register('level', { required: true })}
-                placeholder="Ej: Avanzado, Intermedio, Básico"
+              <Controller
+                name="level"
+                control={languageForm.control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger id="langLevel">
+                      <SelectValue placeholder="Seleccionar nivel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Básico">Básico</SelectItem>
+                      <SelectItem value="Intermedio">Intermedio</SelectItem>
+                      <SelectItem value="Avanzado">Avanzado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               />
             </div>
           </div>

@@ -219,6 +219,35 @@ export class ProfessionalProfileDto {
   summary?: string;
 
   @ApiPropertyOptional({
+    description: 'Habilidades',
+    example: ['JavaScript', 'React', 'Node.js', 'MongoDB'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  skills?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Experiencia laboral',
+    type: [WorkExperienceDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WorkExperienceDto)
+  @IsOptional()
+  workExperience?: WorkExperienceDto[];
+
+  @ApiPropertyOptional({
+    description: 'Formación académica',
+    type: [EducationDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EducationDto)
+  @IsOptional()
+  education?: EducationDto[];
+
+  @ApiPropertyOptional({
     description: 'Idiomas',
     type: [LanguageDto],
   })
@@ -266,35 +295,6 @@ export class UpdateStudentDto extends PartialType(CreateStudentDto) {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Experiencia laboral',
-    type: [WorkExperienceDto],
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => WorkExperienceDto)
-  @IsOptional()
-  workExperience?: WorkExperienceDto[];
-
-  @ApiPropertyOptional({
-    description: 'Formación académica',
-    type: [EducationDto],
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => EducationDto)
-  @IsOptional()
-  education?: EducationDto[];
-
-  @ApiPropertyOptional({
-    description: 'Habilidades',
-    example: ['JavaScript', 'React', 'Node.js', 'MongoDB'],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  skills?: string[];
 
   @ApiPropertyOptional({
     description: 'Perfil profesional completo',

@@ -1,8 +1,6 @@
 import jsPDF from 'jspdf';
 import { designConfig } from '@/config/design.config';
 import type {
-  WorkExperience,
-  Education,
   ProfessionalProfile,
   Student,
 } from '@/types/student.types';
@@ -13,16 +11,9 @@ import type {
 } from '@/types/practice-professional.types';
 import { ActivityStatus } from '@/types/practice-professional.types';
 
-interface ProfessionalProfileData {
-  workExperiences: WorkExperience[];
-  education: Education[];
-  skills: string[];
-  professionalProfile: ProfessionalProfile;
-}
-
 export async function generateStudentPDF(
   student: Student,
-  profile: ProfessionalProfileData,
+  profile: ProfessionalProfile,
 ): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -169,24 +160,24 @@ export async function generateStudentPDF(
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
     yPosition += 10;
 
-    if (profile.professionalProfile.summary) {
+    if (profile.summary) {
       checkPageBreak(20);
       yPosition = addSectionTitle('RESUMEN PROFESIONAL', yPosition);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       const summaryLines = doc.splitTextToSize(
-        profile.professionalProfile.summary,
+        profile.summary,
         contentWidth,
       );
       doc.text(summaryLines, margin, yPosition);
       yPosition += summaryLines.length * 5 + 8;
     }
 
-    if (profile.workExperiences.length > 0) {
+    if (profile.workExperience && profile.workExperience.length > 0) {
       checkPageBreak(30);
       yPosition = addSectionTitle('EXPERIENCIA LABORAL', yPosition);
-      profile.workExperiences.forEach((exp) => {
+      profile.workExperience.forEach((exp) => {
         checkPageBreak(25);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -219,7 +210,7 @@ export async function generateStudentPDF(
       });
     }
 
-    if (profile.education.length > 0) {
+    if (profile.education && profile.education.length > 0) {
       checkPageBreak(30);
       yPosition = addSectionTitle('FORMACIÓN ACADÉMICA', yPosition);
       profile.education.forEach((edu) => {
@@ -260,7 +251,7 @@ export async function generateStudentPDF(
       });
     }
 
-    if (profile.skills.length > 0) {
+    if (profile.skills && profile.skills.length > 0) {
       checkPageBreak(25);
       yPosition = addSectionTitle('HABILIDADES', yPosition);
       doc.setFontSize(10);
@@ -272,16 +263,13 @@ export async function generateStudentPDF(
       yPosition += skillsLines.length * 5 + 8;
     }
 
-    if (
-      profile.professionalProfile.languages &&
-      profile.professionalProfile.languages.length > 0
-    ) {
+    if (profile.languages && profile.languages.length > 0) {
       checkPageBreak(25);
       yPosition = addSectionTitle('IDIOMAS', yPosition);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
-      profile.professionalProfile.languages.forEach((lang) => {
+      profile.languages.forEach((lang) => {
         doc.setFont('helvetica', 'bold');
         doc.text(`${lang.name}:`, margin, yPosition);
         doc.setFont('helvetica', 'normal');
@@ -291,13 +279,10 @@ export async function generateStudentPDF(
       yPosition += 4;
     }
 
-    if (
-      profile.professionalProfile.certifications &&
-      profile.professionalProfile.certifications.length > 0
-    ) {
+    if (profile.certifications && profile.certifications.length > 0) {
       checkPageBreak(30);
       yPosition = addSectionTitle('CERTIFICACIONES', yPosition);
-      profile.professionalProfile.certifications.forEach((cert) => {
+      profile.certifications.forEach((cert) => {
         checkPageBreak(20);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -320,13 +305,10 @@ export async function generateStudentPDF(
       });
     }
 
-    if (
-      profile.professionalProfile.projects &&
-      profile.professionalProfile.projects.length > 0
-    ) {
+    if (profile.projects && profile.projects.length > 0) {
       checkPageBreak(30);
       yPosition = addSectionTitle('PROYECTOS', yPosition);
-      profile.professionalProfile.projects.forEach((proj) => {
+      profile.projects.forEach((proj) => {
         checkPageBreak(25);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');

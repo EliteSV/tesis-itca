@@ -936,14 +936,15 @@ export class OpportunitiesService {
 
     const openai = new OpenAI({ apiKey });
 
+    const pp = student.professionalProfile || {};
     const studentProfile = {
       firstName: student.firstName,
       lastName: student.lastName,
       career: (student.careerId as any)?.name || 'No especificada',
-      workExperience: student.workExperience || [],
-      education: student.education || [],
-      skills: student.skills || [],
-      professionalProfile: student.professionalProfile || {},
+      workExperience: pp.workExperience || [],
+      education: pp.education || [],
+      skills: pp.skills || [],
+      professionalProfile: pp,
     };
 
     const opportunityInfo = {
@@ -1159,14 +1160,15 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
         return null;
       }
 
+      const ppPopulated = studentPopulated.professionalProfile || {};
       const studentProfile = {
         firstName: studentPopulated.firstName,
         lastName: studentPopulated.lastName,
         career: (studentPopulated.careerId as any)?.name || 'No especificada',
-        workExperience: studentPopulated.workExperience || [],
-        education: studentPopulated.education || [],
-        skills: studentPopulated.skills || [],
-        professionalProfile: studentPopulated.professionalProfile || {},
+        workExperience: ppPopulated.workExperience || [],
+        education: ppPopulated.education || [],
+        skills: ppPopulated.skills || [],
+        professionalProfile: ppPopulated,
       };
 
       const opportunityInfo = {
@@ -2467,14 +2469,15 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
         const openai = new OpenAI({ apiKey });
 
+        const ppStudent = student.professionalProfile || {};
         const studentProfile = {
           firstName: student.firstName,
           lastName: student.lastName,
           career: (student.careerId as any)?.name || 'No especificada',
-          workExperience: student.workExperience || [],
-          education: student.education || [],
-          skills: student.skills || [],
-          professionalProfile: student.professionalProfile || {},
+          workExperience: ppStudent.workExperience || [],
+          education: ppStudent.education || [],
+          skills: ppStudent.skills || [],
+          professionalProfile: ppStudent,
         };
 
         const opportunityPopulated = await this.opportunityModel
@@ -2629,14 +2632,15 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
       const openai = new OpenAI({ apiKey });
 
+      const ppStudentSingle = student.professionalProfile || {};
       const studentProfile = {
         firstName: student.firstName,
         lastName: student.lastName,
         career: (student.careerId as any)?.name || 'No especificada',
-        workExperience: student.workExperience || [],
-        education: student.education || [],
-        skills: student.skills || [],
-        professionalProfile: student.professionalProfile || {},
+        workExperience: ppStudentSingle.workExperience || [],
+        education: ppStudentSingle.education || [],
+        skills: ppStudentSingle.skills || [],
+        professionalProfile: ppStudentSingle,
       };
 
       const opportunityInfo = {

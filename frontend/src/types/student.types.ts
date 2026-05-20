@@ -47,6 +47,9 @@ export interface Project {
 
 export interface ProfessionalProfile {
   summary?: string;
+  skills?: string[];
+  workExperience?: WorkExperience[];
+  education?: Education[];
   languages?: Language[];
   certifications?: Certification[];
   projects?: Project[];
@@ -126,9 +129,6 @@ export interface Student {
       endDate?: string;
     }>;
   };
-  workExperience?: WorkExperience[];
-  education?: Education[];
-  skills?: string[];
   professionalProfile?: ProfessionalProfile;
   createdAt: string;
   updatedAt: string;
@@ -149,9 +149,6 @@ export interface CreateStudentDto {
 export interface UpdateStudentDto extends Partial<CreateStudentDto> {
   status?: StudentStatus;
   isActive?: boolean;
-  workExperience?: WorkExperience[];
-  education?: Education[];
-  skills?: string[];
   professionalProfile?: ProfessionalProfile;
 }
 

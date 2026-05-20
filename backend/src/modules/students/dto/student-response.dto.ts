@@ -94,68 +94,40 @@ export class StudentResponseDto {
   updatedAt: Date;
 
   @ApiPropertyOptional({
-    description: 'Experiencia laboral',
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        company: { type: 'string' },
-        position: { type: 'string' },
-        description: { type: 'string' },
-        startDate: { type: 'string', format: 'date-time' },
-        endDate: { type: 'string', format: 'date-time' },
-        isCurrent: { type: 'boolean' },
-      },
-    },
-  })
-  workExperience?: Array<{
-    company: string;
-    position: string;
-    description?: string;
-    startDate: Date;
-    endDate?: Date;
-    isCurrent?: boolean;
-  }>;
-
-  @ApiPropertyOptional({
-    description: 'Formación académica',
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        institution: { type: 'string' },
-        degree: { type: 'string' },
-        field: { type: 'string' },
-        startDate: { type: 'string', format: 'date-time' },
-        endDate: { type: 'string', format: 'date-time' },
-        isCurrent: { type: 'boolean' },
-        description: { type: 'string' },
-      },
-    },
-  })
-  education?: Array<{
-    institution: string;
-    degree: string;
-    field?: string;
-    startDate: Date;
-    endDate?: Date;
-    isCurrent?: boolean;
-    description?: string;
-  }>;
-
-  @ApiPropertyOptional({
-    description: 'Habilidades',
-    type: 'array',
-    items: { type: 'string' },
-    example: ['JavaScript', 'React', 'Node.js'],
-  })
-  skills?: string[];
-
-  @ApiPropertyOptional({
     description: 'Perfil profesional',
     type: 'object',
     properties: {
       summary: { type: 'string' },
+      skills: { type: 'array', items: { type: 'string' } },
+      workExperience: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            company: { type: 'string' },
+            position: { type: 'string' },
+            description: { type: 'string' },
+            startDate: { type: 'string', format: 'date-time' },
+            endDate: { type: 'string', format: 'date-time' },
+            isCurrent: { type: 'boolean' },
+          },
+        },
+      },
+      education: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            institution: { type: 'string' },
+            degree: { type: 'string' },
+            field: { type: 'string' },
+            startDate: { type: 'string', format: 'date-time' },
+            endDate: { type: 'string', format: 'date-time' },
+            isCurrent: { type: 'boolean' },
+            description: { type: 'string' },
+          },
+        },
+      },
       languages: {
         type: 'array',
         items: {
@@ -194,6 +166,24 @@ export class StudentResponseDto {
   })
   professionalProfile?: {
     summary?: string;
+    skills?: string[];
+    workExperience?: Array<{
+      company: string;
+      position: string;
+      description?: string;
+      startDate: Date;
+      endDate?: Date;
+      isCurrent?: boolean;
+    }>;
+    education?: Array<{
+      institution: string;
+      degree: string;
+      field?: string;
+      startDate: Date;
+      endDate?: Date;
+      isCurrent?: boolean;
+      description?: string;
+    }>;
     languages?: Array<{
       name: string;
       level: string;

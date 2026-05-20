@@ -195,12 +195,7 @@ export function StudentDetailPage() {
 
     setIsGeneratingPDF(true);
     try {
-      await generateStudentPDF(student, {
-        workExperiences: student.workExperience || [],
-        education: student.education || [],
-        skills: student.skills || [],
-        professionalProfile: student.professionalProfile || {},
-      });
+      await generateStudentPDF(student, student.professionalProfile || {});
       toast.success('Éxito', 'PDF generado correctamente');
     } catch (error) {
       const errorMessage =

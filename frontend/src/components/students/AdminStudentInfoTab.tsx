@@ -265,14 +265,14 @@ export function AdminStudentInfoTab({
               </section>
             )}
 
-            {student.workExperience && student.workExperience.length > 0 && (
+            {student.professionalProfile?.workExperience && student.professionalProfile?.workExperience.length > 0 && (
               <section>
                 <h4 className="text-lg font-bold text-primary mb-4 pb-2 border-b border-primary/30 flex items-center gap-2">
                   <Briefcase className="h-5 w-5" />
                   Experiencia Laboral
                 </h4>
                 <div className="space-y-5">
-                  {student.workExperience.map((exp, index) => (
+                  {student.professionalProfile?.workExperience.map((exp, index) => (
                     <div
                       key={index}
                       className="pl-4 border-l-2 border-primary/20"
@@ -301,14 +301,14 @@ export function AdminStudentInfoTab({
               </section>
             )}
 
-            {student.education && student.education.length > 0 && (
+            {student.professionalProfile?.education && student.professionalProfile?.education.length > 0 && (
               <section>
                 <h4 className="text-lg font-bold text-primary mb-4 pb-2 border-b border-primary/30 flex items-center gap-2">
                   <GraduationCap className="h-5 w-5" />
                   Formación Académica
                 </h4>
                 <div className="space-y-5">
-                  {student.education.map((edu, index) => (
+                  {student.professionalProfile?.education.map((edu, index) => (
                     <div key={index} className="pl-4 border-l-2 border-primary/20">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
                         <div className="flex-1">
@@ -339,14 +339,14 @@ export function AdminStudentInfoTab({
               </section>
             )}
 
-            {student.skills && student.skills.length > 0 && (
+            {student.professionalProfile?.skills && student.professionalProfile?.skills.length > 0 && (
               <section>
                 <h4 className="text-lg font-bold text-primary mb-4 pb-2 border-b border-primary/30 flex items-center gap-2">
                   <Code className="h-5 w-5" />
                   Habilidades
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {student.skills.map((skill, index) => (
+                  {student.professionalProfile?.skills.map((skill, index) => (
                     <span
                       key={index}
                       className="px-3 py-1.5 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary/90 rounded-md text-sm font-medium"
