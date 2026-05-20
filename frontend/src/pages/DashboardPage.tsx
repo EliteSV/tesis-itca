@@ -152,7 +152,7 @@ function CompanyDashboard({
       icon: Clock,
       color: 'text-yellow-600 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-950',
-      variant: 'outline' as const,
+      badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
     },
     {
       label: 'Aceptadas',
@@ -160,7 +160,7 @@ function CompanyDashboard({
       icon: CheckCircle2,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-950',
-      variant: 'default' as const,
+      badgeClass: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
     },
     {
       label: 'Rechazadas',
@@ -168,7 +168,7 @@ function CompanyDashboard({
       icon: XCircle,
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-950',
-      variant: 'destructive' as const,
+      badgeClass: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
     },
   ];
 
@@ -266,7 +266,7 @@ function CompanyDashboard({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold">{stat.value}</span>
-                        <Badge variant={stat.variant} className="text-xs">
+                        <Badge variant="outline" className={`text-xs ${stat.badgeClass}`}>
                           {percentage}%
                         </Badge>
                       </div>
@@ -448,7 +448,7 @@ function StudentDashboard({
       icon: Clock,
       color: 'text-yellow-600 dark:text-yellow-400',
       bgColor: 'bg-yellow-50 dark:bg-yellow-950',
-      variant: 'outline' as const,
+      badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
     },
     {
       label: 'Aceptadas',
@@ -456,7 +456,7 @@ function StudentDashboard({
       icon: CheckCircle2,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-950',
-      variant: 'default' as const,
+      badgeClass: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
     },
     {
       label: 'Rechazadas',
@@ -464,7 +464,7 @@ function StudentDashboard({
       icon: XCircle,
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-950',
-      variant: 'destructive' as const,
+      badgeClass: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
     },
   ];
 
@@ -531,7 +531,7 @@ function StudentDashboard({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold">{stat.value}</span>
-                        <Badge variant={stat.variant} className="text-xs">
+                        <Badge variant="outline" className={`text-xs ${stat.badgeClass}`}>
                           {percentage}%
                         </Badge>
                       </div>
