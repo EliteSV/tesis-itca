@@ -10,13 +10,14 @@ import {
   TableActionsCell,
   TableActionsDropdownMobile,
 } from '@/components/ui/table-components';
-import { useOpportunitiesForAdmin } from '@/hooks/useOpportunities';
+import { useOpportunitiesForAdmin, useToggleOpportunityActiveStatusForAdmin } from '@/hooks/useOpportunities';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToastContext } from '@/contexts/ToastContext';
 import { formatDate } from '@/utils/date.utils';
 import { exportToCSV } from '@/utils/export.utils';
 import { OpportunityFilters, type OpportunityFilters as OpportunityFiltersType } from '@/pages/opportunities/OpportunityFilters';
 import { Pagination } from '@/pages/career-categories/Pagination';
+import { OpportunityFormDialog } from '@/components/opportunities/OpportunityFormDialog';
 import type { Opportunity } from '@/types/opportunity.types';
 
 export function AdminOpportunitiesPage() {
@@ -26,6 +27,7 @@ export function AdminOpportunitiesPage() {
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<OpportunityFiltersType>({});
+  const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
   const debouncedSearch = useDebounce(search, 300);
 
   const limit = 10;
@@ -90,6 +92,26 @@ export function AdminOpportunitiesPage() {
   const handleViewDetails = useCallback((opportunity: Opportunity) => {
     navigate(`/admin/opportunities/${opportunity._id}`);
   }, [navigate]);
+
+  const handleEditOpportunity = useCallback((opportunity: Opportunity) => {
+    setEditingOpportunity(opportunity);
+  }, []);
+
+  const toggleActiveStatus = useToggleOpportunityActiveStatusForAdmin();
+
+  const handleToggleStatus = useCallback((opportunity: Opportunity) => {
+    toggleActiveStatus.mutate(opportunity._id, {
+      onSuccess: () => {
+        toast.success(
+          'Estado actualizado',
+          `La oportunidad ha sido ${opportunity.status !== 'deshabilitada' ? 'desactivada' : 'activada'} correctamente.`,
+        );
+      },
+      onError: () => {
+        toast.error('Error', 'No se pudo cambiar el estado de la oportunidad.');
+      },
+    });
+  }, [toggleActiveStatus, toast]);
 
   const capitalizeFirst = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -352,6 +374,13 @@ export function AdminOpportunitiesPage() {
                           itemId={opportunity._id}
                           actions={{
                             onView: () => handleViewDetails(opportunity),
+                            onEdit: () => handleEditOpportunity(opportunity),
+                            onToggleStatus: () => handleToggleStatus(opportunity),
+                          }}
+                          statusConfig={{
+                            isActive: opportunity.status !== 'deshabilitada',
+                            activeLabel: 'Activar',
+                            inactiveLabel: 'Desactivar',
                           }}
                           itemName={opportunity.title}
                         />
@@ -431,6 +460,13 @@ export function AdminOpportunitiesPage() {
                       itemId={opportunity._id}
                       actions={{
                         onView: () => handleViewDetails(opportunity),
+                        onEdit: () => handleEditOpportunity(opportunity),
+                        onToggleStatus: () => handleToggleStatus(opportunity),
+                      }}
+                      statusConfig={{
+                        isActive: opportunity.status !== 'deshabilitada',
+                        activeLabel: 'Activar',
+                        inactiveLabel: 'Desactivar',
                       }}
                       itemName={opportunity.title}
                     />
@@ -469,6 +505,13 @@ export function AdminOpportunitiesPage() {
           </div>
         </div>
       </Card>
+
+      <OpportunityFormDialog
+        open={!!editingOpportunity}
+        onOpenChange={(open) => { if (!open) setEditingOpportunity(null); }}
+        opportunity={editingOpportunity}
+        adminMode
+      />
     </div>
   );
 }

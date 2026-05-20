@@ -27,6 +27,15 @@ export function useMyCompanyUsers(options?: { enabled?: boolean }) {
   });
 }
 
+export function useCompanyUsers(companyId?: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['companies', companyId, 'users'],
+    queryFn: () => companiesApi.getUsersByCompany(companyId!),
+    enabled: !!companyId && options?.enabled !== false,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
 export function useCreateMyCompany() {
   const queryClient = useQueryClient();
   const { success, error: showError } = useToast();

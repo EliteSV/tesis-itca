@@ -382,42 +382,17 @@ export class OpportunitiesService {
       throw new NotFoundException('Oportunidad no encontrada');
     }
 
-    const updateData: {
-      title?: string;
-      description?: string;
-      activities?: string;
-      careerId?: Types.ObjectId;
-      responsibleUserId?: Types.ObjectId;
-      totalHours?: number;
-      availablePositions?: number;
-      modality?: string;
-      workType?: string;
-      expirationDate?: Date;
-      status?: OpportunityStatus;
-    } = {
-      title: updateOpportunityDto.title,
-      description: updateOpportunityDto.description,
-      activities: updateOpportunityDto.activities,
-      totalHours: updateOpportunityDto.totalHours,
-      availablePositions: updateOpportunityDto.availablePositions,
-      modality: updateOpportunityDto.modality,
-      workType: updateOpportunityDto.workType,
-      status: updateOpportunityDto.status,
+    const { careerId, responsibleUserId, expirationDate, ...rest } =
+      updateOpportunityDto;
+
+    const updateData = {
+      ...rest,
+      ...(careerId && { careerId: new Types.ObjectId(careerId) }),
+      ...(responsibleUserId && {
+        responsibleUserId: new Types.ObjectId(responsibleUserId),
+      }),
+      ...(expirationDate && { expirationDate: new Date(expirationDate) }),
     };
-
-    if (updateOpportunityDto.careerId) {
-      updateData.careerId = new Types.ObjectId(updateOpportunityDto.careerId);
-    }
-
-    if (updateOpportunityDto.responsibleUserId) {
-      updateData.responsibleUserId = new Types.ObjectId(
-        updateOpportunityDto.responsibleUserId,
-      );
-    }
-
-    if (updateOpportunityDto.expirationDate) {
-      updateData.expirationDate = new Date(updateOpportunityDto.expirationDate);
-    }
 
     const updatedOpportunity = await this.opportunityModel
       .findByIdAndUpdate(id, updateData, {
@@ -435,6 +410,52 @@ export class OpportunitiesService {
 
     const frontendUrl = this.configService.get<string>('frontendUrl') || '';
 
+    const opportunityObj = updatedOpportunity.toObject();
+    return {
+      ...opportunityObj,
+      career: opportunityObj.career,
+      shareLink: updatedOpportunity.shareToken
+        ? `${frontendUrl}/opportunities/${updatedOpportunity.shareToken}`
+        : undefined,
+    };
+  }
+
+  async updateForAdmin(id: string, updateOpportunityDto: UpdateOpportunityDto) {
+    const opportunity = await this.opportunityModel
+      .findOne({ _id: new Types.ObjectId(id) })
+      .exec();
+
+    if (!opportunity) {
+      throw new NotFoundException('Oportunidad no encontrada');
+    }
+
+    const { careerId, responsibleUserId, expirationDate, ...rest } =
+      updateOpportunityDto;
+
+    const updateData = {
+      ...rest,
+      ...(careerId && { careerId: new Types.ObjectId(careerId) }),
+      ...(responsibleUserId && {
+        responsibleUserId: new Types.ObjectId(responsibleUserId),
+      }),
+      ...(expirationDate && { expirationDate: new Date(expirationDate) }),
+    };
+
+    const updatedOpportunity = await this.opportunityModel
+      .findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
+      })
+      .populate('career', 'name code')
+      .populate('company', 'name logo')
+      .populate('responsibleUserId', 'name email')
+      .exec();
+
+    if (!updatedOpportunity) {
+      throw new NotFoundException('Oportunidad no encontrada');
+    }
+
+    const frontendUrl = this.configService.get<string>('frontendUrl') || '';
     const opportunityObj = updatedOpportunity.toObject();
     return {
       ...opportunityObj,
@@ -1051,6 +1072,44 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
 
     const frontendUrl = this.configService.get<string>('frontendUrl') || '';
 
+    const opportunityObj = updatedOpportunity.toObject();
+    return {
+      ...opportunityObj,
+      career: opportunityObj.career,
+      responsibleUser: opportunityObj.responsibleUserId,
+      shareLink: updatedOpportunity.shareToken
+        ? `${frontendUrl}/opportunities/${updatedOpportunity.shareToken}`
+        : undefined,
+    };
+  }
+
+  async toggleActiveStatusForAdmin(id: string) {
+    const opportunity = await this.opportunityModel
+      .findById(new Types.ObjectId(id))
+      .exec();
+
+    if (!opportunity) {
+      throw new NotFoundException('Oportunidad no encontrada');
+    }
+
+    opportunity.status =
+      opportunity.status === OpportunityStatus.DISABLED
+        ? OpportunityStatus.ACTIVE
+        : OpportunityStatus.DISABLED;
+    await opportunity.save();
+
+    const updatedOpportunity = await this.opportunityModel
+      .findById(opportunity._id)
+      .populate('career', 'name code')
+      .populate('company', 'name logo')
+      .populate('responsibleUserId', 'name email')
+      .exec();
+
+    if (!updatedOpportunity) {
+      throw new NotFoundException('Oportunidad no encontrada');
+    }
+
+    const frontendUrl = this.configService.get<string>('frontendUrl') || '';
     const opportunityObj = updatedOpportunity.toObject();
     return {
       ...opportunityObj,

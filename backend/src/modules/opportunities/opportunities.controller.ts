@@ -270,6 +270,41 @@ export class OpportunitiesController {
     return this.opportunitiesService.findOneForAdmin(id);
   }
 
+  @Patch('admin/:id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Actualizar una oportunidad (Admin)',
+    description: 'Permite al administrador actualizar cualquier oportunidad sin restricción de empresa.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Oportunidad actualizada exitosamente',
+    type: OpportunityResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Oportunidad no encontrada' })
+  updateForAdmin(
+    @Param('id') id: string,
+    @Body() updateOpportunityDto: UpdateOpportunityDto,
+  ) {
+    return this.opportunitiesService.updateForAdmin(id, updateOpportunityDto);
+  }
+
+  @Patch('admin/:id/toggle-active')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Activar/desactivar una oportunidad (Admin)',
+    description: 'Permite al administrador activar o desactivar cualquier oportunidad sin restricción de empresa.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estado de la oportunidad actualizado exitosamente',
+    type: OpportunityResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Oportunidad no encontrada' })
+  toggleActiveStatusForAdmin(@Param('id') id: string) {
+    return this.opportunitiesService.toggleActiveStatusForAdmin(id);
+  }
+
   @Get('applications/company')
   @Roles(UserRole.COMPANY)
   @ApiOperation({

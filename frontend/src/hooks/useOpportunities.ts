@@ -75,6 +75,21 @@ export function useUpdateOpportunity() {
   });
 }
 
+export function useUpdateOpportunityForAdmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateOpportunityDto }) =>
+      opportunitiesApi.updateForAdmin(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      queryClient.invalidateQueries({
+        queryKey: ['opportunities', variables.id],
+      });
+    },
+  });
+}
+
 export function useDeleteOpportunity() {
   const queryClient = useQueryClient();
 
@@ -428,6 +443,20 @@ export function useOpportunityForAdmin(id: string) {
     queryKey: ['opportunities', 'admin', id],
     queryFn: () => opportunitiesApi.getByIdForAdmin(id),
     enabled: !!id,
+  });
+}
+
+export function useToggleOpportunityActiveStatusForAdmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => opportunitiesApi.toggleActiveStatusForAdmin(id),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      queryClient.invalidateQueries({
+        queryKey: ['opportunities', variables],
+      });
+    },
   });
 }
 

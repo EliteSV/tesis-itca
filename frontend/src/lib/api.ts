@@ -397,6 +397,13 @@ export const opportunitiesApi = {
     const response = await api.patch<Opportunity>(`/opportunities/${id}`, data);
     return response.data;
   },
+  updateForAdmin: async (
+    id: string,
+    data: UpdateOpportunityDto,
+  ): Promise<Opportunity> => {
+    const response = await api.patch<Opportunity>(`/opportunities/admin/${id}`, data);
+    return response.data;
+  },
   delete: async (id: string): Promise<{ message: string }> => {
     const response = await api.delete<{ message: string }>(
       `/opportunities/${id}`,
@@ -406,6 +413,12 @@ export const opportunitiesApi = {
   toggleActiveStatus: async (id: string): Promise<Opportunity> => {
     const response = await api.patch<Opportunity>(
       `/opportunities/${id}/toggle-active`,
+    );
+    return response.data;
+  },
+  toggleActiveStatusForAdmin: async (id: string): Promise<Opportunity> => {
+    const response = await api.patch<Opportunity>(
+      `/opportunities/admin/${id}/toggle-active`,
     );
     return response.data;
   },

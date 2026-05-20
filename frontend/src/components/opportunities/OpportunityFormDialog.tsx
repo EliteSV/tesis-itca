@@ -26,9 +26,10 @@ import {
 import {
   useCreateOpportunity,
   useUpdateOpportunity,
+  useUpdateOpportunityForAdmin,
 } from '@/hooks/useOpportunities';
 import { useCareers } from '@/hooks/useCareers';
-import { useMyCompanyUsers } from '@/hooks/useMyCompany';
+import { useMyCompanyUsers, useCompanyUsers } from '@/hooks/useMyCompany';
 import { useToastContext } from '@/contexts/ToastContext';
 import {
   OpportunityModalityValues,
@@ -89,6 +90,7 @@ interface OpportunityFormDialogProps {
   onOpenChange: (open: boolean) => void;
   opportunity?: Opportunity | null;
   onSuccess?: () => void;
+  adminMode?: boolean;
 }
 
 export function OpportunityFormDialog({
@@ -96,15 +98,23 @@ export function OpportunityFormDialog({
   onOpenChange,
   opportunity,
   onSuccess,
+  adminMode = false,
 }: OpportunityFormDialogProps) {
   const isEditing = !!opportunity;
   const createMutation = useCreateOpportunity();
   const updateMutation = useUpdateOpportunity();
+  const updateAdminMutation = useUpdateOpportunityForAdmin();
   const toast = useToastContext();
+
+  const companyId = opportunity?.company?._id ?? opportunity?.companyId;
 
   const careersQueryParams = useMemo(() => ({ limit: 100, isActive: true }), []);
   const { data: careersData } = useCareers(careersQueryParams);
-  const { data: myCompanyUsers = [] } = useMyCompanyUsers();
+  const { data: myCompanyUsers = [] } = useMyCompanyUsers({ enabled: !adminMode });
+  const { data: adminCompanyUsers = [] } = useCompanyUsers(
+    adminMode ? companyId : undefined,
+  );
+  const companyUsers = adminMode ? adminCompanyUsers : myCompanyUsers;
 
   const {
     register,
@@ -168,7 +178,7 @@ export function OpportunityFormDialog({
     }
   }, [open, opportunity, reset]);
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending || updateAdminMutation.isPending;
   const careers = useMemo(() => careersData?.data || [], [careersData?.data]);
 
   const careerOptions = useMemo(
@@ -181,14 +191,14 @@ export function OpportunityFormDialog({
   );
 
   const responsibleUserOptions = useMemo(() => {
-    return myCompanyUsers.map((user) => {
+    return companyUsers.map((user) => {
       const userId = (user as User & { _id?: string })._id || user.id || '';
       return {
         value: userId,
         label: user.name,
       };
     });
-  }, [myCompanyUsers]);
+  }, [companyUsers]);
 
   const handleCareerChange = useCallback(
     (value: string) => {
@@ -220,10 +230,17 @@ export function OpportunityFormDialog({
             workType: data.workType,
             expirationDate: data.expirationDate,
           };
-          await updateMutation.mutateAsync({
-            id: opportunity._id,
-            data: updateData,
-          });
+          if (adminMode) {
+            await updateAdminMutation.mutateAsync({
+              id: opportunity._id,
+              data: updateData,
+            });
+          } else {
+            await updateMutation.mutateAsync({
+              id: opportunity._id,
+              data: updateData,
+            });
+          }
           toast.success(
             'Oportunidad actualizada',
             `La oportunidad "${data.title}" ha sido actualizada correctamente.`,
@@ -260,8 +277,10 @@ export function OpportunityFormDialog({
     [
       isEditing,
       opportunity,
+      adminMode,
       createMutation,
       updateMutation,
+      updateAdminMutation,
       onOpenChange,
       onSuccess,
       toast,
