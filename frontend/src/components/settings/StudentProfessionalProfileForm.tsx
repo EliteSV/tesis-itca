@@ -11,9 +11,11 @@ import {
   Download,
   X,
   Check,
+  Eye,
 } from 'lucide-react';
 import { useMyStudent, useUpdateMyStudent } from '@/hooks/useStudents';
 import { useToast } from '@/hooks/useToast';
+import { ProfessionalProfileView } from '@/components/students/ProfessionalProfileView';
 import type {
   WorkExperience,
   Education,
@@ -116,6 +118,7 @@ export function StudentProfessionalProfileForm() {
   const [showCertificationDialog, setShowCertificationDialog] = useState(false);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
 
   const workExpForm = useForm<WorkExperienceFormData>({
     defaultValues: {
@@ -608,15 +611,26 @@ export function StudentProfessionalProfileForm() {
                 </CardDescription>
               </div>
             </div>
-            <Button
-              onClick={handleGeneratePDF}
-              variant="outline"
-              className="gap-2"
-              disabled={isPending}
-            >
-              <Download className="h-4 w-4" />
-              Generar PDF
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowPreviewDialog(true)}
+                variant="outline"
+                className="gap-2"
+                disabled={isPending}
+              >
+                <Eye className="h-4 w-4" />
+                Ver
+              </Button>
+              <Button
+                onClick={handleGeneratePDF}
+                variant="outline"
+                className="gap-2"
+                disabled={isPending}
+              >
+                <Download className="h-4 w-4" />
+                Generar PDF
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -1036,6 +1050,40 @@ export function StudentProfessionalProfileForm() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Professional Profile Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Briefcase className="h-5 w-5 text-primary" />
+              Vista Previa — Mi Perfil Profesional
+            </DialogTitle>
+            <DialogDescription>
+              Así se ve tu perfil profesional actualmente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-2">
+            <ProfessionalProfileView
+              profile={{
+                ...professionalProfile,
+                workExperience: workExperiences,
+                education,
+                skills,
+              }}
+              studentName={student ? `${student.firstName} ${student.lastName}` : undefined}
+              studentEmail={student?.email}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Work Experience Dialog */}
       <Dialog open={showWorkExpDialog} onOpenChange={setShowWorkExpDialog}>
