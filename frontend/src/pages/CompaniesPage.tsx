@@ -9,7 +9,7 @@ import {
   Power,
   Mail,
   User as UserIcon,
-  Download,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useToastContext } from '@/contexts/ToastContext';
 import { getStatusLabel, getStatusVariant } from '@/utils/company.utils';
 import { formatDate } from '@/utils/date.utils';
-import { exportToCSV } from '@/utils/export.utils';
+import { exportToExcel } from '@/utils/export.utils';
 import type { Company } from '@/types/company.types';
 import { CompanyStatusValues } from '@/types/company.types';
 import type { User } from '@/types/auth.types';
@@ -361,7 +361,7 @@ export function CompaniesPage() {
       'Fecha de Creación': formatDate(company.createdAt),
       'Fecha de Actualización': formatDate(company.updatedAt),
     }));
-    exportToCSV(exportData, 'empresas', {
+    exportToExcel(exportData, 'empresas', {
       Nombre: 'Nombre',
       NIT: 'NIT',
       Email: 'Email',
@@ -435,15 +435,15 @@ export function CompaniesPage() {
           </div>
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <Tooltip content="Exportar a CSV">
+              <Tooltip content="Exportar a Excel">
                 <Button
                   onClick={handleExport}
                   variant="outline"
                   size="sm"
                   className="gap-1.5 sm:gap-2 transition-all duration-200 hover:scale-105 active:scale-95 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                  aria-label="Exportar datos a CSV"
+                  aria-label="Exportar datos a Excel"
                 >
-                  <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Exportar</span>
                 </Button>
               </Tooltip>
