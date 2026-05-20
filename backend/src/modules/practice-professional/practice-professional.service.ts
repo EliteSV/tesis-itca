@@ -149,7 +149,6 @@ export class PracticeProfessionalService {
       workType: opportunity.workType,
       expirationDate: opportunity.expirationDate,
       status: opportunity.status,
-      isActive: opportunity.isActive,
       shareToken: opportunity.shareToken,
       createdAt: opportunity.createdAt,
       updatedAt: opportunity.updatedAt,

@@ -83,9 +83,6 @@ export class OpportunityResponseDto {
   })
   status: OpportunityStatus;
 
-  @ApiProperty({ description: 'Indica si la oportunidad está activa' })
-  isActive: boolean;
-
   @ApiPropertyOptional({ description: 'Token para compartir la oportunidad' })
   shareToken?: string;
 

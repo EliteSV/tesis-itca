@@ -9,6 +9,7 @@ export enum OpportunityStatus {
   ACTIVE = 'activa',
   CLOSED = 'cerrada',
   DRAFT = 'borrador',
+  DISABLED = 'deshabilitada',
 }
 
 export enum OpportunityModality {
@@ -73,9 +74,6 @@ export class Opportunity {
   })
   status: OpportunityStatus;
 
-  @Prop({ default: true })
-  isActive: boolean;
-
   @Prop({ unique: true })
   shareToken?: string;
 
@@ -92,7 +90,6 @@ export const OpportunitySchema = SchemaFactory.createForClass(Opportunity);
 OpportunitySchema.index({ companyId: 1 });
 OpportunitySchema.index({ careerId: 1 });
 OpportunitySchema.index({ status: 1 });
-OpportunitySchema.index({ isActive: 1 });
 OpportunitySchema.index({ shareToken: 1 });
 OpportunitySchema.index({ responsibleUserId: 1 });
 OpportunitySchema.index({ expirationDate: 1 });

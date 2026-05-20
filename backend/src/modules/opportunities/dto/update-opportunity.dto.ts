@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsEnum,
   Min,
-  IsBoolean,
   IsDateString,
 } from 'class-validator';
 import {
@@ -109,11 +108,4 @@ export class UpdateOpportunityDto {
   @IsOptional()
   status?: OpportunityStatus;
 
-  @ApiPropertyOptional({
-    description: 'Indica si la oportunidad está activa',
-    example: true,
-  })
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
 }

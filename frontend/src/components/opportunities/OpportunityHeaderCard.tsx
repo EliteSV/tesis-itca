@@ -20,7 +20,7 @@ function getOpportunityStatusBadgeVariant(status?: string) {
       return 'default';
     case 'cerrada':
       return 'destructive';
-    case 'pausada':
+    case 'deshabilitada':
       return 'secondary';
     default:
       return 'outline';
@@ -128,7 +128,7 @@ export function OpportunityHeaderCard({
                 </Badge>
                 {showToggleButton && (
                   <Button
-                    variant={opportunity.isActive ? 'outline' : 'default'}
+                    variant={opportunity.status !== 'deshabilitada' ? 'outline' : 'default'}
                     size="sm"
                     onClick={onToggleActive}
                     disabled={isToggling}
@@ -137,9 +137,9 @@ export function OpportunityHeaderCard({
                     {isToggling ? (
                       <>
                         <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
-                        {opportunity.isActive ? 'Desactivando...' : 'Activando...'}
+                        {opportunity.status !== 'deshabilitada' ? 'Desactivando...' : 'Activando...'}
                       </>
-                    ) : opportunity.isActive ? (
+                    ) : opportunity.status !== 'deshabilitada' ? (
                       <>
                         <PowerOff className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         Desactivar

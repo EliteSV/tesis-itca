@@ -121,8 +121,8 @@ export function OpportunityDetailPage() {
     try {
       await toggleActiveMutation.mutateAsync(opportunity._id);
       toast.success(
-        `Oportunidad ${opportunity.isActive ? 'desactivada' : 'activada'}`,
-        `La oportunidad ha sido ${opportunity.isActive ? 'desactivada' : 'activada'} correctamente.`,
+        `Oportunidad ${opportunity.status !== 'deshabilitada' ? 'desactivada' : 'activada'}`,
+        `La oportunidad ha sido ${opportunity.status !== 'deshabilitada' ? 'desactivada' : 'activada'} correctamente.`,
       );
     } catch (error: unknown) {
       const errorMessage =

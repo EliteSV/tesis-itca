@@ -142,7 +142,6 @@ export function AdminOpportunitiesPage() {
       Vacantes: opportunity.availablePositions,
       Solicitudes: opportunity.applicationsCount || 0,
       Estado: opportunity.status,
-      'Estado Activo': opportunity.isActive ? 'Sí' : 'No',
       Modalidad: opportunity.modality || '',
       'Tipo de Trabajo': opportunity.workType || '',
       'Fecha de Expiración': opportunity.expirationDate

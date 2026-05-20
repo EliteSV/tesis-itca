@@ -348,7 +348,7 @@ export class OpportunitiesService {
 
   async findByShareToken(shareToken: string) {
     const opportunity = await this.opportunityModel
-      .findOne({ shareToken, isActive: true, status: OpportunityStatus.ACTIVE })
+      .findOne({ shareToken, status: OpportunityStatus.ACTIVE })
       .populate('career', 'name code')
       .populate('company', 'name logo')
       .populate('responsibleUserId', 'name email')
@@ -394,7 +394,6 @@ export class OpportunitiesService {
       workType?: string;
       expirationDate?: Date;
       status?: OpportunityStatus;
-      isActive?: boolean;
     } = {
       title: updateOpportunityDto.title,
       description: updateOpportunityDto.description,
@@ -404,7 +403,6 @@ export class OpportunitiesService {
       modality: updateOpportunityDto.modality,
       workType: updateOpportunityDto.workType,
       status: updateOpportunityDto.status,
-      isActive: updateOpportunityDto.isActive,
     };
 
     if (updateOpportunityDto.careerId) {
@@ -1034,7 +1032,10 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       throw new NotFoundException('Oportunidad no encontrada');
     }
 
-    opportunity.isActive = !opportunity.isActive;
+    opportunity.status =
+      opportunity.status === OpportunityStatus.DISABLED
+        ? OpportunityStatus.ACTIVE
+        : OpportunityStatus.DISABLED;
     await opportunity.save();
 
     const updatedOpportunity = await this.opportunityModel
@@ -1216,7 +1217,6 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const query: {
       careerId?: Types.ObjectId;
       status: OpportunityStatus;
-      isActive: boolean;
       $or?: Array<{
         title?: { $regex: string; $options: string };
         description?: { $regex: string; $options: string };
@@ -1228,7 +1228,6 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       }>;
     } = {
       status: OpportunityStatus.ACTIVE,
-      isActive: true,
       $and: [
         {
           $or: [
@@ -1344,10 +1343,7 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
       throw new NotFoundException('Oportunidad no encontrada');
     }
 
-    if (
-      !opportunity.isActive ||
-      opportunity.status !== OpportunityStatus.ACTIVE
-    ) {
+    if (opportunity.status !== OpportunityStatus.ACTIVE) {
       throw new BadRequestException('Esta oportunidad no está disponible');
     }
 
@@ -1525,7 +1521,6 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     const opportunityQuery: {
       _id: { $in: Types.ObjectId[] };
       status: OpportunityStatus;
-      isActive: boolean;
       $or?: Array<{
         title?: { $regex: string; $options: string };
         description?: { $regex: string; $options: string };
@@ -1533,7 +1528,6 @@ Responde SOLO con un número decimal entre 1.0 y 5.0 (puede incluir .5), sin tex
     } = {
       _id: { $in: opportunityIds },
       status: OpportunityStatus.ACTIVE,
-      isActive: true,
     };
 
     if (search) {

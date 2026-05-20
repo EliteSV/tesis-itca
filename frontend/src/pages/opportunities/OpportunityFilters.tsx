@@ -134,6 +134,9 @@ export function OpportunityFilters({
                   <SelectItem value={OpportunityStatusValues.DRAFT}>
                     Borrador
                   </SelectItem>
+                  <SelectItem value={OpportunityStatusValues.DISABLED}>
+                    Deshabilitada
+                  </SelectItem>
                 </SelectContent>
               </Select>
 

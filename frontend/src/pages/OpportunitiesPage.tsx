@@ -80,8 +80,8 @@ export function OpportunitiesPage() {
     try {
       await toggleActiveMutation.mutateAsync(opportunity._id);
       toast.success(
-        `Oportunidad ${opportunity.isActive ? 'desactivada' : 'activada'}`,
-        `La oportunidad "${opportunity.title}" ha sido ${opportunity.isActive ? 'desactivada' : 'activada'} correctamente.`,
+        `Oportunidad ${opportunity.status !== 'deshabilitada' ? 'desactivada' : 'activada'}`,
+        `La oportunidad "${opportunity.title}" ha sido ${opportunity.status !== 'deshabilitada' ? 'desactivada' : 'activada'} correctamente.`,
       );
     } catch (error: unknown) {
       const errorMessage =
@@ -259,10 +259,10 @@ export function OpportunitiesPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleActive(opportunity)}
-                        className={`flex-1 sm:flex-initial ${!opportunity.isActive ? 'text-amber-600 hover:text-amber-700' : ''}`}
-                        title={opportunity.isActive ? 'Desactivar' : 'Activar'}
+                        className={`flex-1 sm:flex-initial ${opportunity.status === 'deshabilitada' ? 'text-amber-600 hover:text-amber-700' : ''}`}
+                        title={opportunity.status !== 'deshabilitada' ? 'Desactivar' : 'Activar'}
                       >
-                        {opportunity.isActive ? (
+                        {opportunity.status !== 'deshabilitada' ? (
                           <>
                             <PowerOff className="h-4 w-4 sm:mr-0 md:mr-2" />
                             <span className="hidden md:inline">Desactivar</span>

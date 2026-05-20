@@ -1,9 +1,10 @@
-export type OpportunityStatus = 'activa' | 'cerrada' | 'borrador';
+export type OpportunityStatus = 'activa' | 'cerrada' | 'borrador' | 'deshabilitada';
 
 export const OpportunityStatusValues = {
   ACTIVE: 'activa' as const,
   CLOSED: 'cerrada' as const,
   DRAFT: 'borrador' as const,
+  DISABLED: 'deshabilitada' as const,
 };
 
 export type OpportunityModality = 'presencial' | 'remoto';
@@ -62,7 +63,6 @@ export interface Opportunity {
   workType?: OpportunityWorkType;
   expirationDate?: string;
   status: OpportunityStatus;
-  isActive: boolean;
   shareToken?: string;
   shareLink?: string;
   isSaved?: boolean;
@@ -86,9 +86,7 @@ export interface CreateOpportunityDto {
   status?: OpportunityStatus;
 }
 
-export interface UpdateOpportunityDto extends Partial<CreateOpportunityDto> {
-  isActive?: boolean;
-}
+export type UpdateOpportunityDto = Partial<CreateOpportunityDto>;
 
 export interface OpportunitiesResponse {
   data: Opportunity[];
