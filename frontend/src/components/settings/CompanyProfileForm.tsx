@@ -48,7 +48,8 @@ export function CompanyProfileForm() {
   const [pendingData, setPendingData] = useState<CompanyFormData | null>(null);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  
+  const [logoChanged, setLogoChanged] = useState(false);
+
   const hasCompany = !!company;
   const isNotFound = isError && companyErrorResponse?.response?.status === 404;
 
@@ -77,11 +78,9 @@ export function CompanyProfileForm() {
         sector: company.sector || "",
         description: company.description || "",
       });
-      
-      // Cargar preview del logo si existe
       setLogoPreview(company.logo || null);
+      setLogoChanged(false);
     } else if (isNotFound) {
-      // Resetear formulario a valores vacíos si no hay empresa
       reset({
         name: "",
         nit: "",
@@ -92,6 +91,7 @@ export function CompanyProfileForm() {
         description: "",
       });
       setLogoPreview(null);
+      setLogoChanged(false);
     }
   }, [company, isNotFound, reset]);
   
@@ -110,6 +110,7 @@ export function CompanyProfileForm() {
         const reader = new FileReader();
         reader.onloadend = () => {
           setLogoPreview(reader.result as string);
+          setLogoChanged(true);
         };
         reader.readAsDataURL(file);
       }
@@ -119,6 +120,7 @@ export function CompanyProfileForm() {
 
   const handleRemoveLogo = useCallback(() => {
     setLogoPreview(company?.logo || null);
+    setLogoChanged(false);
   }, [company]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -161,7 +163,6 @@ export function CompanyProfileForm() {
   const handleConfirmSave = () => {
     if (pendingData) {
       if (hasCompany) {
-        // Actualizar empresa existente
         const updateData: UpdateCompanyDto = {
           name: pendingData.name,
           nit: pendingData.nit,
@@ -170,11 +171,11 @@ export function CompanyProfileForm() {
           email: pendingData.email || undefined,
           sector: pendingData.sector || undefined,
           description: pendingData.description || undefined,
-          logo: logoPreview || undefined,
+          // Solo enviar logo si el usuario lo cambió en esta sesión
+          ...(logoChanged && { logo: logoPreview || undefined }),
         };
         updateCompanyMutation.mutate({ data: updateData });
       } else {
-        // Crear nueva empresa
         const createData: CreateCompanyDto = {
           name: pendingData.name,
           nit: pendingData.nit,
