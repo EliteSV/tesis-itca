@@ -8,6 +8,9 @@ import { AppModule } from '@/app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.useBodyParser('json', { limit: '10mb' });
+  app.useBodyParser('urlencoded', { limit: '10mb', extended: true });
+
   const configService = app.get(ConfigService);
 
   app.useGlobalPipes(
